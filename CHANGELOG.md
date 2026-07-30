@@ -17,6 +17,8 @@ All notable public changes to this project will be documented here.
 - A linked SooCloud playback page for a full-resolution, browser-compatible
   H.264/AAC pen-response recording, with the untouched original and a
   repository-hosted fallback also available.
+- A muted 720x1280 H.264 GitHub attachment that plays directly inside the
+  README without leaving the repository page.
 
 ### Not released
 
