@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a reproducible issue without credentials or device backups
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This project has no public installer release. Do not post passwords,
+        account tokens, Wi-Fi credentials, serial numbers, or full backups.
+  - type: input
+    id: device
+    attributes:
+      label: Device and stock OS version
+      placeholder: Paper Pro Move / reMarkable OS version
+    validations:
+      required: true
+  - type: dropdown
+    id: stock_boot
+    attributes:
+      label: Does stock OS still boot?
+      options:
+        - "Yes"
+        - "No"
+        - "Not tested"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and observed result
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Remove credentials, account details, documents, and identifiers.

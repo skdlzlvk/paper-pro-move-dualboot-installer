@@ -1,0 +1,13 @@
+android_app {
+    name: "PaperHome",
+    manifest: "AndroidManifest.xml",
+    srcs: ["src/**/*.java"],
+    // Launcher3QuickStep in this Android image is signed with the AOSP testkey.
+    // Keep the same signing identity so PackageManager accepts this replacement.
+    certificate: "testkey",
+    sdk_version: "current",
+    privileged: true,
+    optimize: {
+        enabled: false,
+    },
+}

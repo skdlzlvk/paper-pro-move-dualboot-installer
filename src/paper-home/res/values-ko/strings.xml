@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Paper 홈</string>
+    <string name="brand_name">paper</string>
+    <string name="home_title">내 Paper Move</string>
+    <string name="section_continue">계속하기</string>
+    <string name="section_my_apps">내 앱</string>
+    <string name="section_tools">도구</string>
+
+    <string name="category_read">읽기</string>
+    <string name="category_write">필기</string>
+    <string name="category_document">문서</string>
+    <string name="category_connection">연결</string>
+    <string name="category_app">앱</string>
+    <string name="category_system">시스템</string>
+    <string name="category_store">스토어</string>
+
+    <string name="tile_ridi">리디북스</string>
+    <string name="tile_ridi_detail">마지막 읽던 책으로</string>
+    <string name="tile_notes">노트</string>
+    <string name="tile_notes_detail">목록 · 템플릿 · 새 노트</string>
+    <string name="tile_my_files">내 파일</string>
+    <string name="tile_files_detail">PDF · EPUB</string>
+    <string name="tile_wifi">Wi-Fi</string>
+    <string name="tile_wifi_detail">무선 연결</string>
+    <string name="tile_all_apps">모든 앱</string>
+    <string name="tile_all_apps_detail">전체 목록</string>
+    <string name="tile_settings">설정</string>
+    <string name="tile_settings_detail">Android</string>
+    <string name="tile_app_store">앱 스토어</string>
+    <string name="tile_app_store_detail">앱 설치</string>
+
+    <string name="date_pattern">M월 d일 EEEE</string>
+    <string name="status_battery">배터리 %1$d%%</string>
+    <string name="status_wifi_connected">Wi-Fi 연결</string>
+    <string name="status_wifi_offline">Wi-Fi 오프라인</string>
+    <string name="installed_count_short">%1$d개 설치됨</string>
+    <string name="installed_count_detail">%1$d개 설치됨 · 새 앱은 자동으로 표시</string>
+    <string name="no_installed_apps">설치된 앱이 없습니다</string>
+    <string name="install_apps_hint">Play 스토어나 Aurora에서 앱을 설치해 주세요</string>
+    <string name="note_summary">%1$d개 노트 · 템플릿 %2$d종</string>
+
+    <string name="stock_os">순정 OS</string>
+    <string name="stock_os_detail">흰 배경 · 정지 화면 우선 · 화면 메뉴는 ○ 버튼</string>
+    <string name="app_open_failed">%1$s 앱을 열 수 없습니다.</string>
+    <string name="ridi_not_found">리디북스를 찾을 수 없습니다.</string>
+    <string name="aurora_not_found">Aurora Store를 찾을 수 없습니다.</string>
+    <string name="rebooting_stock">순정 OS로 다시 시작합니다.</string>
+    <string name="stock_request_failed">순정 OS 요청을 만들 수 없습니다.</string>
+
+    <string name="nav_home">‹  홈</string>
+    <string name="app_library_title">내 앱</string>
+    <string name="action_open">열기  ›</string>
+    <string name="action_previous">‹  이전</string>
+    <string name="action_next">다음  ›</string>
+
+    <string name="app_detail_millie">전자책 · 오디오북</string>
+    <string name="app_detail_ridi">전자책 · 웹툰</string>
+    <string name="app_detail_play_store">Google 앱 검색 · 설치</string>
+    <string name="app_detail_aurora">로그인 없이 앱 설치</string>
+    <string name="app_detail_installed">설치된 앱</string>
+    <string name="app_mark_millie">밀</string>
+    <string name="app_mark_ridi">리</string>
+    <string name="app_mark_default">앱</string>
+
+    <string name="wifi_service_missing">Android Wi-Fi 서비스를 찾을 수 없습니다.</string>
+    <string name="wifi_scan_not_ready">검색 서비스 준비 중 · 잠시 후 다시 눌러주세요</string>
+    <string name="wifi_scan_permission_applying">Wi-Fi 검색 권한을 적용하는 중입니다</string>
+    <string name="wifi_service_missing_short">Android Wi-Fi 서비스 없음</string>
+    <string name="wifi_disabled_message">Wi-Fi가 꺼져 있습니다</string>
+    <string name="wifi_connected_system">Android 시스템에 연결됨</string>
+    <string name="wifi_authenticating">인증 중</string>
+    <string name="wifi_choose_network">연결할 네트워크를 선택하세요</string>
+    <string name="wifi_scan_permission_required">Wi-Fi 검색 권한이 필요합니다</string>
+    <string name="wifi_change_failed">Wi-Fi 상태를 바꾸지 못했습니다.</string>
+    <string name="wifi_change_permission_missing">Wi-Fi 변경 권한이 없습니다.</string>
+    <string name="wifi_eap_requires_settings">기업용 EAP 망은 Android 고급 설정이 필요합니다.</string>
+    <string name="wifi_save_failed">Android에 네트워크를 저장하지 못했습니다.</string>
+    <string name="wifi_enable_network_failed">네트워크 활성화에 실패했습니다.</string>
+    <string name="wifi_connect_permission_missing">네트워크 연결 권한이 없습니다.</string>
+    <string name="wifi_service_starting">무선 서비스 시작 중</string>
+    <string name="wifi_back">‹ 뒤로</string>
+    <string name="wifi_turn_off">Wi-Fi 끄기</string>
+    <string name="wifi_turn_on">Wi-Fi 켜기</string>
+    <string name="wifi_rescan">다시 검색</string>
+    <string name="wifi_title">Wi-Fi 연결</string>
+    <string name="wifi_subtitle">Android 시스템 Wi-Fi · NXP IW61x</string>
+    <string name="wifi_headline_disabled">Wi-Fi 꺼짐  위의 켜기 버튼을 눌러주세요</string>
+    <string name="wifi_headline_connected">연결됨  %1$s</string>
+    <string name="wifi_headline_connecting">연결 중  %1$s</string>
+    <string name="wifi_headline_scanning">주변 네트워크 검색 중</string>
+    <string name="wifi_headline_offline">오프라인  %1$s</string>
+    <string name="wifi_available_networks">사용 가능한 네트워크</string>
+    <string name="wifi_no_scan_results">검색 결과가 아직 없습니다. 다시 검색을 눌러주세요.</string>
+    <string name="wifi_detail_locked"> · 잠금</string>
+    <string name="wifi_detail_saved"> · 저장됨</string>
+    <string name="wifi_detail_signal"> · 신호 %1$s</string>
+    <string name="wifi_enter_password">Wi-Fi 암호를 입력하세요</string>
+    <string name="wifi_erase">지우기</string>
+    <string name="wifi_lowercase">소문자</string>
+    <string name="wifi_uppercase">대문자</string>
+    <string name="action_cancel">취소</string>
+    <string name="action_connect">연결</string>
+    <string name="wifi_scan_requested">검색 요청됨</string>
+    <string name="wifi_turning_off">Wi-Fi 끄는 중</string>
+    <string name="wifi_turning_on">Wi-Fi 켜는 중</string>
+    <string name="wifi_connecting_ssid">%1$s 연결 중</string>
+    <string name="wifi_password_too_short">암호는 8자 이상이어야 합니다.</string>
+
+    <string name="display_control_title">화면 제어 · %1$s · %2$s</string>
+    <string name="display_full_refresh">⟳  전체 리프레시</string>
+    <string name="display_fast_mode">»  빠른 모드</string>
+    <string name="display_balanced_mode">◆  균형 모드</string>
+    <string name="display_quality_mode">▣  선명 모드</string>
+    <string name="display_disable_auto_color">◈  자동 컬러 끄기</string>
+    <string name="display_enable_auto_color">◈  자동 컬러 켜기</string>
+    <string name="display_settle_color">▧  지금 컬러 정착</string>
+    <string name="display_light_brighter">☀  조명 밝게</string>
+    <string name="display_light_dimmer">☾  조명 어둡게</string>
+    <string name="display_disable_scheduled_light">◒  시간대 자동 조명 끄기</string>
+    <string name="display_enable_scheduled_light">◒  시간대 자동 조명</string>
+    <string name="display_poweroff_disabled">⏻  잠금 후 종료 · 끔</string>
+    <string name="display_poweroff_minutes">⏻  잠금 후 종료 · %1$d분</string>
+    <string name="display_invert">◐  흑백 반전</string>
+    <string name="action_close">×  닫기</string>
+    <string name="display_mode_selected">%1$s 모드</string>
+    <string name="display_fixed_mono">흑백 고정 모드</string>
+    <string name="display_auto_color_enabled">멈추면 컬러로 정착합니다</string>
+    <string name="display_settling_color">현재 화면을 컬러로 정착합니다</string>
+    <string name="display_light_percent">조명 %1$d%%</string>
+    <string name="display_light_change_failed">조명 밝기를 변경하지 못했습니다</string>
+    <string name="display_scheduled_light_enabled">시간대 자동 조명 켜짐</string>
+    <string name="display_manual_light_enabled">수동 조명으로 전환</string>
+    <string name="display_auto_light_change_failed">자동 조명 모드를 변경하지 못했습니다</string>
+    <string name="display_auto_poweroff_off">자동 종료를 끕니다. 대기 중에도 배터리를 사용합니다</string>
+    <string name="display_auto_poweroff_after">화면을 끈 뒤 %1$d분 후 완전히 종료합니다</string>
+    <string name="display_profile_fast">빠른</string>
+    <string name="display_profile_balanced">균형</string>
+    <string name="display_profile_quality">선명</string>
+    <string name="display_color_mono">흑백</string>
+    <string name="display_color_preparing">컬러 준비</string>
+    <string name="display_color_auto">자동컬러</string>
+    <string name="display_command_failed">화면 명령을 저장하지 못했습니다</string>
+    <string name="display_control_accessibility">전자잉크 화면 제어</string>
+
+    <string name="template_blank">무지</string>
+    <string name="template_ruled">줄 노트</string>
+    <string name="template_grid">모눈</string>
+    <string name="template_dots">도트</string>
+    <string name="template_checklist">체크리스트</string>
+    <string name="template_cornell">코넬 노트</string>
+    <string name="template_daily">데일리</string>
+    <string name="template_weekly">위클리</string>
+    <string name="template_storyboard">스토리보드</string>
+    <string name="template_music">오선지</string>
+    <string name="template_meeting">회의록</string>
+    <string name="template_daily_todos">오늘의 할 일</string>
+    <string name="template_focus">집중 기록</string>
+    <string name="template_eisenhower">아이젠하워</string>
+    <string name="template_gratitude">감사 일기</string>
+
+    <string name="quick_note">빠른 노트</string>
+    <string name="note_date_pattern">M월 d일 HH:mm</string>
+    <string name="note_default_title">노트 %1$s</string>
+    <string name="notebook_back_home">‹ 홈</string>
+    <string name="notebook_back_list">‹ 목록</string>
+    <string name="notebook_title">내 노트</string>
+    <string name="notebook_count_recent">%1$d개 · 최근 수정 순</string>
+    <string name="notebook_new_note">＋ 새 노트</string>
+    <string name="notebook_manage">관리</string>
+    <string name="notebook_previous">‹ 이전</string>
+    <string name="notebook_next">다음 ›</string>
+    <string name="notebook_manage_title">노트 관리</string>
+    <string name="notebook_open">노트 열기</string>
+    <string name="notebook_rename">이름 바꾸기</string>
+    <string name="notebook_delete_confirm">한 번 더 누르면 삭제</string>
+    <string name="notebook_quick_note_no_delete">빠른 노트는 삭제 불가</string>
+    <string name="action_delete">삭제</string>
+    <string name="notebook_close">닫기</string>
+    <string name="notebook_template_title">새 노트</string>
+    <string name="notebook_template_summary">템플릿 %1$d종 · 기본 · 플래너 · 메소드</string>
+    <string name="notebook_new_unmodified">새 노트</string>
+    <string name="notebook_quick_note_delete_error">빠른 노트는 삭제할 수 없습니다.</string>
+    <string name="notebook_rename_title">노트 이름 바꾸기</string>
+    <string name="action_save">저장</string>
+    <string name="notebook_move_failed">노트를 이동할 수 없습니다.</string>
+    <string name="notebook_vector_move_failed">벡터 노트를 이동할 수 없습니다.</string>
+
+    <string-array name="pen_labels">
+        <item>볼펜</item>
+        <item>파인라이너</item>
+        <item>연필</item>
+        <item>마커</item>
+        <item>붓</item>
+    </string-array>
+    <string-array name="weekdays_short">
+        <item>월</item>
+        <item>화</item>
+        <item>수</item>
+        <item>목</item>
+        <item>금</item>
+        <item>토</item>
+        <item>일</item>
+    </string-array>
+    <string-array name="gratitude_prompts">
+        <item>오늘 감사한 세 가지</item>
+        <item>오늘 마음에 남은 순간</item>
+        <item>내일을 위한 한 가지</item>
+    </string-array>
+    <string name="note_template_keyword">키워드</string>
+    <string name="note_template_notes">노트</string>
+    <string name="note_template_summary">요약</string>
+    <string name="note_template_date">날짜</string>
+    <string name="note_template_meeting">회의록</string>
+    <string name="note_template_attendees">참석자</string>
+    <string name="note_template_agenda">안건</string>
+    <string name="note_template_meeting_body">회의 메모</string>
+    <string name="note_template_decisions">결정 사항 · 다음 행동</string>
+    <string name="note_template_today_tasks">오늘의 할 일</string>
+    <string name="note_template_top_three">가장 중요한 세 가지</string>
+    <string name="note_template_tasks">할 일</string>
+    <string name="note_template_focus_log">집중 기록</string>
+    <string name="note_template_today_goal">오늘의 목표</string>
+    <string name="note_template_time">시간</string>
+    <string name="note_template_focus_task">집중할 일</string>
+    <string name="note_template_done">완료</string>
+    <string name="note_template_eisenhower">아이젠하워 매트릭스</string>
+    <string name="note_template_urgent_important">긴급 · 중요</string>
+    <string name="note_template_important_plan">중요 · 계획</string>
+    <string name="note_template_urgent_delegate">긴급 · 위임</string>
+    <string name="note_template_later_eliminate">나중에 · 제거</string>
+    <string name="note_template_gratitude">감사 일기</string>
+    <string name="note_back">‹ 노트</string>
+    <string name="note_autosave">자동 저장</string>
+    <string name="note_pen">펜</string>
+    <string name="note_eraser">지우개</string>
+    <string name="note_width">굵기</string>
+    <string name="note_eraser_size">지우개 크기</string>
+    <string name="note_clear_confirm">다시 눌러 삭제</string>
+    <string name="note_clear_all">전체 지우기</string>
+</resources>
