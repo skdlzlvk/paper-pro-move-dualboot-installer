@@ -14,6 +14,8 @@ All notable public changes to this project will be documented here.
 - English and Korean UI resources.
 - Device photos and a short Gallery 3 color demonstration.
 - A muted 60 fps real-device Paper Home pen-response demonstration.
+- A linked SooCloud playback page for the full-resolution original
+  pen-response recording, with a repository-hosted preview and fallback copy.
 
 ### Not released
 
