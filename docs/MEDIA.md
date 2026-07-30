@@ -15,18 +15,24 @@ The pen video is a real-device visual demonstration, not a laboratory latency
 measurement. Camera frame rate, exposure, display scan-out, and viewing
 conditions limit conclusions from the recording.
 
-The README preview links to the owner's SooCloud copy of the original
-recording:
+The README preview links to a browser-compatible SooCloud playback copy:
 
-- [public playback page](https://files.soocloud.app/share/2a565c0a-bb53-4d24-b813-6ed5b493aadc)
-- [direct MP4 stream](https://files.soocloud.app/share-stream/2a565c0a-bb53-4d24-b813-6ed5b493aadc)
+- [public playback page](https://files.soocloud.app/share/233305e5-e89d-4f5e-a1b9-08227f697aaa)
+- [direct H.264 MP4 stream](https://files.soocloud.app/share-stream/233305e5-e89d-4f5e-a1b9-08227f697aaa)
 
-That original is 1080x1920 at approximately 60 fps, is 19.14 seconds long,
-includes its original audio track, and has SHA-256
-`903B77C2DB787F4CF9813132DA1AB4B0B7A8255E481915695A065F74FDBDC419`.
+The playback copy is H.264 High Profile, 1080x1920 at 60 fps, uses the
+browser-compatible yuv420p pixel format, includes AAC audio, and has SHA-256
+`92F395F091225B2B7AF2DF81B8A0B5E0BB71E9A40A58BB0F2D23E0E930C66161`.
 The public stream was checked from outside the host for HTTP byte-range
-support. The muted repository copy remains available as a fallback and has
-SHA-256
+support.
+
+The untouched camera original is also preserved on SooCloud. It uses HEVC,
+which did not play in every web browser, includes its original audio track,
+and has SHA-256
+`903B77C2DB787F4CF9813132DA1AB4B0B7A8255E481915695A065F74FDBDC419`.
+It is available as an
+[original-file download](https://files.soocloud.app/share-download/2a565c0a-bb53-4d24-b813-6ed5b493aadc).
+The muted repository copy remains available as a fallback and has SHA-256
 `89BC89AC3B3E5826872761F821DB90744120C016398128B488937F64EF3E45B4`.
 
 The presence of an application or trademark in a screenshot indicates
