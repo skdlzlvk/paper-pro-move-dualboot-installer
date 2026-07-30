@@ -18,12 +18,11 @@ desktop.
 
 ### Paper Home pen-response demo
 
-[![Watch the Paper Home pen-response demo](media/pen-latency-preview.jpg)](https://files.soocloud.app/share/233305e5-e89d-4f5e-a1b9-08227f697aaa)
+https://github.com/user-attachments/assets/d9355ed8-65f1-42e2-a7ff-482a260d9601
 
-[▶ Watch the browser-compatible 19-second, 1080×1920, 60 fps video on
-SooCloud](https://files.soocloud.app/share/233305e5-e89d-4f5e-a1b9-08227f697aaa)
+Browser-compatible H.264, 720×1280, 60 fps, muted.
 
-[Direct H.264 MP4 stream](https://files.soocloud.app/share-stream/233305e5-e89d-4f5e-a1b9-08227f697aaa)
+[Full-resolution H.264 playback](https://files.soocloud.app/share/233305e5-e89d-4f5e-a1b9-08227f697aaa)
 · [Original HEVC recording](https://files.soocloud.app/share-download/2a565c0a-bb53-4d24-b813-6ed5b493aadc)
 · [Muted repository copy](media/pen-latency-demo.mp4)
 
