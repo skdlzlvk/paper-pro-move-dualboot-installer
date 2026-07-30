@@ -14,6 +14,12 @@ The pen video is a real-device visual demonstration, not a laboratory latency
 measurement. Camera frame rate, exposure, display scan-out, and viewing
 conditions limit conclusions from the recording.
 
+The README inline player uses a separate GitHub attachment derived from the
+same reviewed source. It is 600x1067 at approximately 60 fps, has no audio
+track, and has SHA-256
+`492E552502A7EAA03015B57C6959BC82715119956C0895024CF4626A06F69BB2`.
+The repository copy remains the canonical downloadable artifact.
+
 The presence of an application or trademark in a screenshot indicates
 compatibility testing only. Third-party applications are not included in this
 repository.

@@ -16,7 +16,11 @@ desktop.
 
 ![Paper Home running locally on the Paper Pro Move](media/paper-home.jpg)
 
-[Watch the 19-second Paper Home pen-response demo](media/pen-latency-demo.mp4)
+### Paper Home pen-response demo
+
+https://github.com/user-attachments/assets/2a5b0b1b-a460-4bcc-af01-abbdc9b25287
+
+[Open the repository copy](media/pen-latency-demo.mp4)
 
 [Watch the 7-second Gallery 3 color demo](media/gallery3-demo.mp4)
 
