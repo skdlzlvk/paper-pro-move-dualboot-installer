@@ -9,6 +9,7 @@ Last public status update: 2026-07-30
 - healthy-boot commit and stock fallback;
 - touch, palm rejection, and Marker state;
 - Paper Home low-latency native ink;
+- a public 60 fps real-device pen-response demonstration;
 - system Wi-Fi and internet validation;
 - front light, power button, lock, and wake;
 - manual E Ink refresh and speed/quality modes;
@@ -22,6 +23,8 @@ Last public status update: 2026-07-30
 
 - battery optimizations are active, but the public measurement table is not
   complete;
+- the pen-response video is visual evidence, not a calibrated end-to-end
+  latency measurement;
 - Kindle and Libby open, but account/DRM/download/offline workflows are not
   verified;
 - OTA overwrite prevention works, but update/backup/restore automation does not;

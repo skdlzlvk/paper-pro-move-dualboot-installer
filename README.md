@@ -16,6 +16,8 @@ desktop.
 
 ![Paper Home running locally on the Paper Pro Move](media/paper-home.jpg)
 
+[Watch the 19-second Paper Home pen-response demo](media/pen-latency-demo.mp4)
+
 [Watch the 7-second Gallery 3 color demo](media/gallery3-demo.mp4)
 
 ![Kindle rendering color book covers on the device](media/kindle-gallery3.jpg)
@@ -87,7 +89,7 @@ See [Release status](docs/RELEASE-STATUS.md) for the precise support boundary.
 - `src/ota/` — experimental OTA overwrite guard and status checker
 - `src/paper-home/` — clean-room E Ink launcher and note UI integration layer
 - `docs/` — architecture, safety, source policy, roadmap, and release status
-- `media/` — device photos and a short on-device demo
+- `media/` — device photos and short on-device pen/color demonstrations
 
 The E Ink bridge and early boot selector are not in the first public source
 snapshot because their current build depends on a device-side header boundary
