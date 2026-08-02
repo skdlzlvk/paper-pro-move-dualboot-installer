@@ -1,5 +1,7 @@
 # Paper Pro Move dual-boot installer
 
+[![Sponsor this project](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/skdlzlvk)
+
 An experimental, open-source Windows installer project for configuring a
 user-owned reMarkable Paper Pro Move to dual boot:
 
