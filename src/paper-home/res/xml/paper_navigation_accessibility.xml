@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeViewTextChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:canRetrieveWindowContent="false"
+    android:description="@string/fixed_nav_accessibility"
+    android:notificationTimeout="0" />

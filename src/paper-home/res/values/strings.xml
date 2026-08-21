@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Paper Home</string>
+    <string name="brand_name">paper</string>
+    <string name="home_title">My Paper Move</string>
+    <string name="section_continue">Continue</string>
+    <string name="section_my_apps">My apps</string>
+    <string name="section_tools">Tools</string>
+
+    <string name="category_read">Read</string>
+    <string name="category_write">Write</string>
+    <string name="category_document">Document</string>
+    <string name="category_connection">Connection</string>
+    <string name="category_app">App</string>
+    <string name="category_system">System</string>
+    <string name="category_store">Store</string>
+
+    <string name="tile_ridi">RIDI</string>
+    <string name="tile_ridi_detail">Continue reading</string>
+    <string name="tile_notes">Notes</string>
+    <string name="tile_notes_detail">List · templates · new note</string>
+    <string name="tile_my_files">My files</string>
+    <string name="tile_files_detail">PDF · EPUB</string>
+    <string name="tile_wifi">Wi-Fi</string>
+    <string name="tile_wifi_detail">Wireless connection</string>
+    <string name="tile_all_apps">All apps</string>
+    <string name="tile_all_apps_detail">Full list</string>
+    <string name="tile_settings">Settings</string>
+    <string name="tile_settings_detail">Android</string>
+    <string name="tile_app_store">Recommended apps</string>
+    <string name="tile_app_store_detail">Reading · notes</string>
+
+    <string name="date_pattern">EEE, MMM d</string>
+    <string name="status_battery">Battery %1$d%%</string>
+    <string name="status_wifi_connected">Wi-Fi connected</string>
+    <string name="status_wifi_offline">Wi-Fi offline</string>
+    <string name="installed_count_short">%1$d installed</string>
+    <string name="installed_count_detail">%1$d installed · New apps appear automatically</string>
+    <string name="no_installed_apps">No installed apps</string>
+    <string name="install_apps_hint">Use Recommended apps or the Windows app importer</string>
+    <string name="note_summary">%1$d notes · %2$d templates</string>
+
+    <string name="stock_os">Stock OS</string>
+    <string name="stock_os_detail">White background · static-first · screen menu on ○ button</string>
+    <string name="app_open_failed">%1$s could not be opened.</string>
+    <string name="ridi_not_found">RIDI is not installed.</string>
+    <string name="aurora_not_found">Aurora Store is not installed.</string>
+    <string name="rebooting_stock">Restarting into stock OS.</string>
+    <string name="stock_request_failed">Could not request stock OS.</string>
+
+    <string name="nav_home">‹  Home</string>
+    <string name="app_library_title">My apps</string>
+    <string name="action_open">Open  ›</string>
+    <string name="action_previous">‹  Previous</string>
+    <string name="action_next">Next  ›</string>
+
+    <string name="recommended_apps_button">Recommended  ›</string>
+    <string name="recommended_apps_title">Recommended apps</string>
+    <string name="recommended_apps_subtitle">Official sources · Nothing installs automatically</string>
+    <string name="recommended_source_store">Official store</string>
+    <string name="recommended_source_open">Open source</string>
+    <string name="recommended_action_open">Installed · Open  ›</string>
+    <string name="recommended_action_store">View in store  ›</string>
+    <string name="recommended_action_release">Official release  ›</string>
+    <string name="recommended_open_failed">Could not open the official page for %1$s.</string>
+    <string name="recommended_detail_kindle">Amazon books · Kindle Unlimited</string>
+    <string name="recommended_detail_libby">Library ebooks · audiobooks</string>
+    <string name="recommended_detail_kobo">Kobo ebooks · audiobooks</string>
+    <string name="recommended_detail_play_books">Google ebooks · uploaded books</string>
+    <string name="recommended_detail_evernote">Synced notes · documents</string>
+    <string name="recommended_detail_goodnotes">Online-first notes · 4 GB RAM recommended</string>
+    <string name="recommended_detail_onenote">Microsoft notes · ink</string>
+    <string name="recommended_detail_koreader">E Ink reader · EPUB · PDF</string>
+
+    <string name="app_detail_millie">E-books · audiobooks</string>
+    <string name="app_detail_ridi">E-books · webtoons</string>
+    <string name="app_detail_play_store">Find and install Google apps</string>
+    <string name="app_detail_aurora">Install apps without signing in</string>
+    <string name="app_detail_installed">Installed app</string>
+    <string name="app_mark_millie">M</string>
+    <string name="app_mark_ridi">R</string>
+    <string name="app_mark_default">A</string>
+
+    <string name="wifi_service_missing">Android Wi-Fi service is unavailable.</string>
+    <string name="wifi_scan_not_ready">Scanner is getting ready · Try again shortly</string>
+    <string name="wifi_scan_permission_applying">Applying Wi-Fi scan permission</string>
+    <string name="wifi_service_missing_short">Android Wi-Fi service unavailable</string>
+    <string name="wifi_disabled_message">Wi-Fi is off</string>
+    <string name="wifi_connected_system">Connected through Android</string>
+    <string name="wifi_authenticating">Authenticating</string>
+    <string name="wifi_choose_network">Choose a network</string>
+    <string name="wifi_scan_permission_required">Wi-Fi scan permission is required</string>
+    <string name="wifi_change_failed">Could not change Wi-Fi state.</string>
+    <string name="wifi_change_permission_missing">Wi-Fi change permission is unavailable.</string>
+    <string name="wifi_eap_requires_settings">Enterprise EAP networks require Android advanced settings.</string>
+    <string name="wifi_save_failed">Could not save the network in Android.</string>
+    <string name="wifi_enable_network_failed">Could not activate the network.</string>
+    <string name="wifi_connect_permission_missing">Network connection permission is unavailable.</string>
+    <string name="wifi_service_starting">Starting wireless service</string>
+    <string name="wifi_back">‹ Back</string>
+    <string name="wifi_turn_off">Turn Wi-Fi off</string>
+    <string name="wifi_turn_on">Turn Wi-Fi on</string>
+    <string name="wifi_rescan">Scan again</string>
+    <string name="wifi_title">Wi-Fi connection</string>
+    <string name="wifi_subtitle">Android system Wi-Fi · NXP IW61x</string>
+    <string name="wifi_headline_disabled">Wi-Fi is off  Use the button above to turn it on</string>
+    <string name="wifi_headline_connected">Connected  %1$s</string>
+    <string name="wifi_headline_connecting">Connecting  %1$s</string>
+    <string name="wifi_headline_scanning">Scanning nearby networks</string>
+    <string name="wifi_headline_offline">Offline  %1$s</string>
+    <string name="wifi_available_networks">Available networks</string>
+    <string name="wifi_no_scan_results">No results yet. Tap Scan again.</string>
+    <string name="wifi_detail_locked"> · Locked</string>
+    <string name="wifi_detail_saved"> · Saved</string>
+    <string name="wifi_detail_signal"> · Signal %1$s</string>
+    <string name="wifi_enter_password">Enter the Wi-Fi password</string>
+    <string name="wifi_password_characters">%1$d characters entered</string>
+    <string name="wifi_erase">Erase</string>
+    <string name="wifi_lowercase">Lowercase</string>
+    <string name="wifi_uppercase">Uppercase</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_connect">Connect</string>
+    <string name="wifi_scan_requested">Scan requested</string>
+    <string name="wifi_turning_off">Turning Wi-Fi off</string>
+    <string name="wifi_turning_on">Turning Wi-Fi on</string>
+    <string name="wifi_connecting_ssid">Connecting to %1$s</string>
+    <string name="wifi_password_too_short">Password must be at least 8 characters.</string>
+
+    <string name="display_control_title">Display controls · %1$s · %2$s</string>
+    <string name="display_full_refresh">⟳  Full refresh</string>
+    <string name="display_fast_mode">»  Fast mode</string>
+    <string name="display_balanced_mode">◆  Balanced mode</string>
+    <string name="display_quality_mode">▣  Quality mode</string>
+    <string name="display_disable_auto_color">◈  Disable automatic color</string>
+    <string name="display_enable_auto_color">◈  Enable automatic color</string>
+    <string name="display_settle_color">▧  Settle color now</string>
+    <string name="display_light_brighter">☀  Brighter light</string>
+    <string name="display_light_dimmer">☾  Dimmer light</string>
+    <string name="display_disable_scheduled_light">◒  Disable scheduled light</string>
+    <string name="display_enable_scheduled_light">◒  Scheduled light</string>
+    <string name="display_lock_style">▣  Lock screen · %1$s</string>
+    <string name="display_poweroff_disabled">⏻  Power off after lock · Off</string>
+    <string name="display_poweroff_minutes">⏻  Power off after lock · %1$d min</string>
+    <string name="display_invert">◐  Invert monochrome</string>
+    <string name="action_close">×  Close</string>
+    <string name="display_mode_selected">%1$s mode</string>
+    <string name="display_fixed_mono">Fixed monochrome mode</string>
+    <string name="display_auto_color_enabled">Color settles when the screen stops</string>
+    <string name="display_settling_color">Settling the current screen in color</string>
+    <string name="display_light_percent">Light %1$d%%</string>
+    <string name="display_light_change_failed">Could not change light brightness</string>
+    <string name="display_scheduled_light_enabled">Scheduled light enabled</string>
+    <string name="display_manual_light_enabled">Switched to manual light</string>
+    <string name="display_auto_light_change_failed">Could not change automatic light mode</string>
+    <string name="display_lock_style_selected">Lock screen: %1$s</string>
+    <string name="lock_style_fade">Faded current page</string>
+    <string name="lock_style_reading">Reading page</string>
+    <string name="lock_style_clean">Clean</string>
+    <string name="lock_style_clock">Clock</string>
+    <string name="lock_style_classic">Classic standby</string>
+    <string name="display_auto_poweroff_off">Automatic power-off is disabled. Standby will still use battery.</string>
+    <string name="display_auto_poweroff_after">The device will power off %1$d minutes after the screen turns off.</string>
+    <string name="display_profile_fast">Fast</string>
+    <string name="display_profile_balanced">Balanced</string>
+    <string name="display_profile_quality">Quality</string>
+    <string name="display_color_mono">Monochrome</string>
+    <string name="display_color_preparing">Preparing color</string>
+    <string name="display_color_auto">Automatic color</string>
+    <string name="display_command_failed">Could not save the display command</string>
+    <string name="display_control_accessibility">E Ink display controls</string>
+    <string name="frontlight_swipe_accessibility">Swipe down for reading light</string>
+    <string name="frontlight_panel_title">Reading light</string>
+    <string name="frontlight_panel_auto">Scheduled light</string>
+    <string name="frontlight_panel_manual">Manual light</string>
+    <string name="frontlight_panel_close">Close</string>
+    <string name="fixed_nav_back">‹  Back</string>
+    <string name="fixed_nav_home">○  Home</string>
+    <string name="fixed_nav_refresh">↻  Refresh</string>
+    <string name="fixed_nav_accessibility">E Ink navigation: Back, Home, Refresh</string>
+
+    <string name="template_blank">Blank</string>
+    <string name="template_ruled">Ruled</string>
+    <string name="template_grid">Grid</string>
+    <string name="template_dots">Dots</string>
+    <string name="template_checklist">Checklist</string>
+    <string name="template_cornell">Cornell notes</string>
+    <string name="template_daily">Daily</string>
+    <string name="template_weekly">Weekly</string>
+    <string name="template_storyboard">Storyboard</string>
+    <string name="template_music">Music staff</string>
+    <string name="template_meeting">Meeting notes</string>
+    <string name="template_daily_todos">Today tasks</string>
+    <string name="template_focus">Focus log</string>
+    <string name="template_eisenhower">Eisenhower</string>
+    <string name="template_gratitude">Gratitude journal</string>
+
+    <string name="quick_note">Quick note</string>
+    <string name="note_date_pattern">MMM d, HH:mm</string>
+    <string name="note_default_title">Note %1$s</string>
+    <string name="notebook_back_home">‹ Home</string>
+    <string name="notebook_back_list">‹ List</string>
+    <string name="notebook_title">My notes</string>
+    <string name="notebook_count_recent">%1$d · Recently edited</string>
+    <string name="notebook_new_note">＋ New note</string>
+    <string name="notebook_manage">Manage</string>
+    <string name="notebook_previous">‹ Previous</string>
+    <string name="notebook_next">Next ›</string>
+    <string name="notebook_manage_title">Manage note</string>
+    <string name="notebook_open">Open note</string>
+    <string name="notebook_rename">Rename</string>
+    <string name="notebook_delete_confirm">Tap again to delete</string>
+    <string name="notebook_quick_note_no_delete">Quick note cannot be deleted</string>
+    <string name="action_delete">Delete</string>
+    <string name="notebook_close">Close</string>
+    <string name="notebook_template_title">New note</string>
+    <string name="notebook_template_summary">%1$d templates · Basic · planners · methods</string>
+    <string name="notebook_new_unmodified">New note</string>
+    <string name="notebook_quick_note_delete_error">Quick note cannot be deleted.</string>
+    <string name="notebook_rename_title">Rename note</string>
+    <string name="action_save">Save</string>
+    <string name="notebook_move_failed">Could not move the note.</string>
+    <string name="notebook_vector_move_failed">Could not move the vector note.</string>
+
+    <string-array name="pen_labels">
+        <item>Ballpoint</item>
+        <item>Fineliner</item>
+        <item>Pencil</item>
+        <item>Marker</item>
+        <item>Brush</item>
+        <item>Highlighter</item>
+    </string-array>
+    <string-array name="note_color_labels">
+        <item>Black</item>
+        <item>Gray</item>
+        <item>Orange</item>
+        <item>Blue</item>
+        <item>Red</item>
+        <item>Green</item>
+        <item>Yellow</item>
+        <item>Cyan</item>
+        <item>Magenta</item>
+    </string-array>
+    <string-array name="weekdays_short">
+        <item>Mon</item>
+        <item>Tue</item>
+        <item>Wed</item>
+        <item>Thu</item>
+        <item>Fri</item>
+        <item>Sat</item>
+        <item>Sun</item>
+    </string-array>
+    <string-array name="gratitude_prompts">
+        <item>Three things I am grateful for today</item>
+        <item>A moment that stayed with me today</item>
+        <item>One thing for tomorrow</item>
+    </string-array>
+    <string name="note_template_keyword">Keywords</string>
+    <string name="note_template_notes">Notes</string>
+    <string name="note_template_summary">Summary</string>
+    <string name="note_template_date">Date</string>
+    <string name="note_template_meeting">Meeting notes</string>
+    <string name="note_template_attendees">Attendees</string>
+    <string name="note_template_agenda">Agenda</string>
+    <string name="note_template_meeting_body">Meeting notes</string>
+    <string name="note_template_decisions">Decisions · next actions</string>
+    <string name="note_template_today_tasks">Today tasks</string>
+    <string name="note_template_top_three">Top three priorities</string>
+    <string name="note_template_tasks">Tasks</string>
+    <string name="note_template_focus_log">Focus log</string>
+    <string name="note_template_today_goal">Goal for today</string>
+    <string name="note_template_time">Time</string>
+    <string name="note_template_focus_task">Focus task</string>
+    <string name="note_template_done">Done</string>
+    <string name="note_template_eisenhower">Eisenhower matrix</string>
+    <string name="note_template_urgent_important">Urgent · important</string>
+    <string name="note_template_important_plan">Important · plan</string>
+    <string name="note_template_urgent_delegate">Urgent · delegate</string>
+    <string name="note_template_later_eliminate">Later · eliminate</string>
+    <string name="note_template_gratitude">Gratitude journal</string>
+    <string name="note_back">‹ Notes</string>
+    <string name="note_autosave">Auto save</string>
+    <string name="note_pen">Pen</string>
+    <string name="note_eraser">Eraser</string>
+    <string name="note_color">Color</string>
+    <string name="note_width">Width</string>
+    <string name="note_eraser_size">Eraser size</string>
+    <string name="note_clear_confirm">Tap again to clear</string>
+    <string name="note_clear_all">Clear all</string>
+    <string name="note_thin">Thin</string>
+    <string name="note_medium">Medium</string>
+    <string name="note_thick">Thick</string>
+    <string name="note_typing">Typing</string>
+    <string name="note_layers">Layers</string>
+    <string name="note_convert_text">Convert to text</string>
+    <string name="note_enable_shapes">Enable shapes</string>
+    <string name="note_page_overview">Page overview</string>
+    <string name="note_tags">Tags</string>
+    <string name="note_search">Search</string>
+    <string name="note_share">Share</string>
+    <string name="note_settings">Notebook settings</string>
+    <string name="note_previous_page">‹ Previous</string>
+    <string name="note_next_page">Next ›</string>
+    <string name="note_add_page">＋ Add page</string>
+    <string name="note_horizontal_pages">Horizontal pages</string>
+    <string name="note_vertical_scroll">Vertical scroll</string>
+    <string name="note_horizontal_hint">Swipe left or right with a finger to turn pages.</string>
+    <string name="note_vertical_hint">Swipe up or down with a finger to move through pages.</string>
+    <string name="note_page_count">Page %1$d of %2$d</string>
+    <string name="display_reader_refresh_row">Page refresh: %1$s</string>
+    <string name="display_reader_refresh_every_page">every page</string>
+    <string name="display_reader_refresh_every_3">every 3 pages</string>
+    <string name="display_reader_refresh_every_5">every 5 pages</string>
+    <string name="display_reader_refresh_budget">automatic</string>
+    <string name="display_reader_refresh_selected">Page refresh: %1$s</string>
+    <string name="display_ghost_control_row">Ghost removal: %1$s</string>
+    <string name="display_ghost_control_off">repaint</string>
+    <string name="display_ghost_control_bleach">stock bleach</string>
+    <string name="display_ghost_control_blink">stock blink</string>
+    <string name="display_ghost_control_selected">Ghost removal: %1$s</string>
+    <string name="display_text_contrast_row">Text darkness: %1$s</string>
+    <string name="display_text_contrast_normal">normal</string>
+    <string name="display_text_contrast_dark">dark</string>
+    <string name="display_text_contrast_darker">darker</string>
+    <string name="display_text_contrast_selected">Text darkness: %1$s</string>
+</resources>

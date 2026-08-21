@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Release builds overlay these values. Empty trust data fails closed. -->
+    <string name="ota_feed_base_url" translatable="false"></string>
+    <string name="ota_trusted_key_id" translatable="false"></string>
+    <string name="ota_public_key_spki" translatable="false"></string>
+    <string name="ota_current_release_id" translatable="false">paper-move-android16-v89</string>
+    <string name="ota_installed_stock_version" translatable="false">3.27.3.0</string>
+</resources>

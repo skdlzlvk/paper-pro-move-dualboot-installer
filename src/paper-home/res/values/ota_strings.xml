@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_home_button">Updates</string>
+    <string name="update_back">‹ Home</string>
+    <string name="update_title">System updates</string>
+    <string name="update_subtitle">Signed updates for the project Android installation</string>
+    <string name="update_channel">Channel · %1$s</string>
+    <string name="update_channel_stable">Stable</string>
+    <string name="update_channel_public_beta">Public beta</string>
+    <string name="update_channel_private_beta">Private beta</string>
+    <string name="update_current_title">Android is ready</string>
+    <string name="update_current_detail">Installed release: %1$s</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_checking_title">Checking securely</string>
+    <string name="update_checking_detail">Downloading and verifying signed release metadata…</string>
+    <string name="update_available_title">Update available</string>
+    <string name="update_available_detail">Release %1$s · %2$s · requires at least %3$d%% battery</string>
+    <string name="update_download">Download and verify</string>
+    <string name="update_downloading_title">Downloading update</string>
+    <string name="update_downloading_detail">The file remains inactive until every verification passes.</string>
+    <string name="update_download_progress">%1$s · %2$d%%</string>
+    <string name="update_ready_title">Update verified</string>
+    <string name="update_ready_detail">Release %1$s is staged.</string>
+    <string name="update_staged_detail">Release %1$s passed signature, size, and SHA-256 checks. Staged at %2$s</string>
+    <string name="update_waiting_applier">Offline installer required</string>
+    <string name="update_battery_title">Charge before downloading</string>
+    <string name="update_battery_detail">Battery is %1$d%%; this release requires %2$d%%.</string>
+    <string name="update_failed_title">Update refused</string>
+    <string name="update_failed_detail">Nothing was installed. %1$s</string>
+    <string name="update_retry">Try again</string>
+    <string name="update_not_configured_title">Remote updates are not enabled</string>
+    <string name="update_not_configured_detail">This development build has no trusted production endpoint or public key. It fails closed.</string>
+    <string name="update_unavailable">Not configured</string>
+    <string name="update_safety">Updates are never applied while Android is running. A verified backup and the stock offline installer are required before any Android partition write.</string>
+</resources>

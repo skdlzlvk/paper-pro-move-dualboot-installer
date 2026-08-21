@@ -1,0 +1,125 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.android.launcher3"
+    android:versionCode="3442"
+    android:versionName="2.32.1">
+
+    <uses-sdk
+        android:minSdkVersion="28"
+        android:targetSdkVersion="36" />
+
+    <uses-permission android:name="android.permission.REBOOT" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <!-- WifiManager.startScan()/getScanResults() still require location on
+         Android 16 in addition to NEARBY_WIFI_DEVICES.  This launcher is a
+         platform-signed system component and receives both permissions from
+         the default-permissions exception below. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission
+        android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.NETWORK_SETTINGS" />
+    <uses-permission android:name="android.permission.NETWORK_SETUP_WIZARD" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+    <uses-permission android:name="android.permission.STATUS_BAR" />
+    <uses-permission android:name="android.permission.STATUS_BAR_SERVICE" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
+
+    <!-- Platform-signed launcher: keeps its own E Ink navigation accessibility
+         service enabled (physical finding #22: it was found disabled after a
+         later boot although first-boot provisioning had run). -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <application
+        android:allowBackup="false"
+        android:directBootAware="true"
+        android:hardwareAccelerated="true"
+        android:label="@string/app_name"
+        android:persistent="true"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+
+        <activity
+            android:name="com.android.launcher3.uioverrides.QuickstepLauncher"
+            android:clearTaskOnLaunch="true"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:hardwareAccelerated="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:stateNotNeeded="true">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.android.launcher3.paper.NoteActivity"
+            android:exported="false"
+            android:hardwareAccelerated="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name="com.android.launcher3.paper.NotebookActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name="com.android.launcher3.paper.WifiActivity"
+            android:exported="false"
+            android:hardwareAccelerated="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name="com.android.launcher3.paper.AppLibraryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name="com.android.launcher3.paper.RecommendedAppsActivity"
+            android:exported="false"
+            android:hardwareAccelerated="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name="com.android.launcher3.paper.UpdateActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <service
+            android:name="com.android.launcher3.paper.DisplayControlService"
+            android:directBootAware="true"
+            android:exported="false" />
+
+        <receiver
+            android:name="com.android.launcher3.paper.LocaleSeedReceiver"
+            android:directBootAware="true"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="com.android.launcher3.paper.action.SET_INITIAL_LOCALE" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name="com.android.launcher3.paper.PaperNavigationAccessibilityService"
+            android:directBootAware="true"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/paper_navigation_accessibility" />
+        </service>
+    </application>
+</manifest>

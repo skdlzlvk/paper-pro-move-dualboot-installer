@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_home_button">更新</string>
+    <string name="update_back">‹ 主页</string>
+    <string name="update_title">系统更新</string>
+    <string name="update_subtitle">项目 Android 安装的签名更新</string>
+    <string name="update_channel">频道 · %1$s</string>
+    <string name="update_channel_stable">稳定版</string>
+    <string name="update_channel_public_beta">公开测试版</string>
+    <string name="update_channel_private_beta">私有测试版</string>
+    <string name="update_current_title">Android 已准备就绪</string>
+    <string name="update_current_detail">已安装版本：%1$s</string>
+    <string name="update_check">检查更新</string>
+    <string name="update_checking_title">正在安全检查</string>
+    <string name="update_checking_detail">正在下载并验证已签名的版本信息…</string>
+    <string name="update_available_title">有可用更新</string>
+    <string name="update_available_detail">版本 %1$s · %2$s · 需要至少 %3$d%% 电量</string>
+    <string name="update_download">下载并验证</string>
+    <string name="update_downloading_title">正在下载更新</string>
+    <string name="update_downloading_detail">所有验证通过前，文件保持非活动状态。</string>
+    <string name="update_download_progress">%1$s · %2$d%%</string>
+    <string name="update_ready_title">更新验证完成</string>
+    <string name="update_ready_detail">版本 %1$s 已暂存。</string>
+    <string name="update_staged_detail">版本 %1$s 已通过签名、大小和 SHA-256 检查。暂存位置：%2$s</string>
+    <string name="update_waiting_applier">需要离线安装器</string>
+    <string name="update_battery_title">请充电后下载</string>
+    <string name="update_battery_detail">当前电量为 %1$d%%；此版本要求 %2$d%%。</string>
+    <string name="update_failed_title">更新已拒绝</string>
+    <string name="update_failed_detail">未安装任何内容。%1$s</string>
+    <string name="update_retry">重试</string>
+    <string name="update_not_configured_title">远程更新尚未启用</string>
+    <string name="update_not_configured_detail">此开发版本没有可信的生产端点或公钥，因此安全拒绝。</string>
+    <string name="update_unavailable">未配置</string>
+    <string name="update_safety">Android 运行时绝不会应用更新。写入 Android 分区前必须具备已验证的备份和原厂系统离线安装器。</string>
+</resources>

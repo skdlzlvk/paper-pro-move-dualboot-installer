@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_home_button">업데이트</string>
+    <string name="update_back">‹ 홈</string>
+    <string name="update_title">시스템 업데이트</string>
+    <string name="update_subtitle">프로젝트 Android용 서명 업데이트</string>
+    <string name="update_channel">채널 · %1$s</string>
+    <string name="update_channel_stable">안정</string>
+    <string name="update_channel_public_beta">공개 베타</string>
+    <string name="update_channel_private_beta">비공개 베타</string>
+    <string name="update_current_title">Android가 준비되었습니다</string>
+    <string name="update_current_detail">설치된 릴리스: %1$s</string>
+    <string name="update_check">업데이트 확인</string>
+    <string name="update_checking_title">안전하게 확인 중</string>
+    <string name="update_checking_detail">서명된 릴리스 정보를 내려받아 검증하고 있습니다…</string>
+    <string name="update_available_title">업데이트가 있습니다</string>
+    <string name="update_available_detail">릴리스 %1$s · %2$s · 배터리 %3$d%% 이상 필요</string>
+    <string name="update_download">다운로드 및 검증</string>
+    <string name="update_downloading_title">업데이트 다운로드 중</string>
+    <string name="update_downloading_detail">모든 검증이 통과할 때까지 파일은 비활성 상태로 유지됩니다.</string>
+    <string name="update_download_progress">%1$s · %2$d%%</string>
+    <string name="update_ready_title">업데이트 검증 완료</string>
+    <string name="update_ready_detail">릴리스 %1$s가 준비되었습니다.</string>
+    <string name="update_staged_detail">릴리스 %1$s의 서명·크기·SHA-256 검증을 통과했습니다. 저장 위치: %2$s</string>
+    <string name="update_waiting_applier">오프라인 설치기 필요</string>
+    <string name="update_battery_title">충전 후 다운로드하세요</string>
+    <string name="update_battery_detail">현재 배터리는 %1$d%%이며 이 릴리스는 %2$d%% 이상이 필요합니다.</string>
+    <string name="update_failed_title">업데이트 거부됨</string>
+    <string name="update_failed_detail">아무것도 설치하지 않았습니다. %1$s</string>
+    <string name="update_retry">다시 시도</string>
+    <string name="update_not_configured_title">원격 업데이트가 활성화되지 않았습니다</string>
+    <string name="update_not_configured_detail">이 개발 빌드에는 신뢰할 운영 서버와 공개키가 없습니다. 안전하게 거부합니다.</string>
+    <string name="update_unavailable">설정되지 않음</string>
+    <string name="update_safety">Android 실행 중에는 업데이트를 적용하지 않습니다. Android 파티션을 쓰기 전에 검증된 백업과 순정 오프라인 설치기가 필요합니다.</string>
+</resources>
