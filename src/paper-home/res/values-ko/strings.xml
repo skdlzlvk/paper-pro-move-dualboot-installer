@@ -92,7 +92,7 @@
     <string name="wifi_scan_permission_required">Wi-Fi 검색 권한이 필요합니다</string>
     <string name="wifi_change_failed">Wi-Fi 상태를 바꾸지 못했습니다.</string>
     <string name="wifi_change_permission_missing">Wi-Fi 변경 권한이 없습니다.</string>
-    <string name="wifi_eap_requires_settings">기업용 EAP 망은 Android 고급 설정이 필요합니다.</string>
+    <string name="wifi_eap_requires_settings">기업용 EAP 망은 Android 설정에서 연결합니다. 지금 엽니다.</string>
     <string name="wifi_save_failed">Android에 네트워크를 저장하지 못했습니다.</string>
     <string name="wifi_enable_network_failed">네트워크 활성화에 실패했습니다.</string>
     <string name="wifi_connect_permission_missing">네트워크 연결 권한이 없습니다.</string>

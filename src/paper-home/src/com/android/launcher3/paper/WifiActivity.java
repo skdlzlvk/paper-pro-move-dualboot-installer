@@ -19,6 +19,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.text.format.Formatter;
 import android.view.MotionEvent;
 import android.view.View;
@@ -422,9 +423,25 @@ public final class WifiActivity extends Activity {
             setWifiEnabled(true);
         }
         if ("EAP".equals(row.security)) {
+            /*
+             * A university or workplace network needs an identity, an EAP
+             * method and often a CA certificate, none of which this screen
+             * collects. Naming the place to go and then stopping there left
+             * the person with nowhere to tap (asked for publicly 2026-08-22:
+             * "I'd settle for being able to get on my university wifi").
+             * Android's own Wi-Fi settings has the full form, so open it.
+             */
             Toast.makeText(this,
                     getString(R.string.wifi_eap_requires_settings),
                     Toast.LENGTH_LONG).show();
+            Intent enterprise = new Intent(Settings.ACTION_WIFI_SETTINGS);
+            enterprise.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            try {
+                startActivity(enterprise);
+            } catch (RuntimeException unavailable) {
+                // The toast has already named the destination, so a device
+                // without the settings activity still gets a usable message.
+            }
             return;
         }
         WifiConfiguration existing = configuredNetwork(row.ssid);

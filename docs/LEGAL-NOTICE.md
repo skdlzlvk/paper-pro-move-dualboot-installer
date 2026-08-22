@@ -54,9 +54,15 @@ receives a binary, whether or not they sponsor the project.
 ## Sponsorship
 
 GitHub sponsorship is voluntary support for research, testing, recovery tooling
-and documentation. The US$10/month tier provides the maintained prebuilt
-Windows package, verified release metadata, compatibility updates and priority
-issue triage.
+and documentation. The US$15 tier provides the maintained prebuilt Windows
+package, verified release metadata, compatibility updates and priority issue
+triage.
+
+It is billed monthly because GitHub will only attach a private download
+repository to a monthly tier. Sponsoring, downloading and cancelling is a
+one-time US$15 charge. The software contains no activation or licence key: a
+package already downloaded continues to work and cannot be remotely disabled.
+What ends when a sponsorship ends is access to future downloads.
 
 Sponsorship is not an exclusive software license, ownership of the project, a
 guaranteed release date, or a guarantee against device failure. It does not

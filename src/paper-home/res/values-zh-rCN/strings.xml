@@ -92,7 +92,7 @@
     <string name="wifi_scan_permission_required">需要 Wi-Fi 扫描权限</string>
     <string name="wifi_change_failed">无法更改 Wi-Fi 状态。</string>
     <string name="wifi_change_permission_missing">没有 Wi-Fi 更改权限。</string>
-    <string name="wifi_eap_requires_settings">企业 EAP 网络需要 Android 高级设置。</string>
+    <string name="wifi_eap_requires_settings">企业 EAP 网络需在 Android 设置中连接，正在打开。</string>
     <string name="wifi_save_failed">无法在 Android 中保存网络。</string>
     <string name="wifi_enable_network_failed">无法启用网络。</string>
     <string name="wifi_connect_permission_missing">没有网络连接权限。</string>

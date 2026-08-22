@@ -11,7 +11,27 @@ The Android slot's kernel is GPL-2.0. The written corresponding-source offer in
 [KERNEL-SOURCE.md](docs/KERNEL-SOURCE.md) is honoured for anyone who receives a
 binary, sponsor or not.
 
-## What the US$10/month sponsor tier is for
+## US$15, and why it is billed monthly
+
+**The build you download keeps working.** There is no activation or licence key
+in the software, it cannot remotely disable an installed tablet, and cancelling
+takes nothing away from a tablet you have already set up.
+
+It is a monthly tier for one boring reason: GitHub will only attach the private
+download repository to a monthly tier. That is the only way you get access the
+moment you sponsor, instead of waiting for me to invite you by hand. So
+**sponsor, download, and cancel** — that is a one-time US$15 with nothing
+recurring, and you can come back and sponsor again whenever there is an update
+you actually want. Two updates in a year is US$30, not US$180.
+
+Staying subscribed is worth it only if you would rather not think about it.
+What lapses when sponsorship lapses is access to *future* downloads, nothing
+else.
+
+I will not charge twice for fixing my own defects. If a build you paid for
+turns out to be broken, say so and the fix is free.
+
+## What it pays for
 
 The maintained Windows package: the installer, the removal tool and the guided
 recovery flow, distributed as a versioned build with checksums and release

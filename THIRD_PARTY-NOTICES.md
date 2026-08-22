@@ -54,7 +54,34 @@ not copied from a private tablet backup. Both projects are distributed under
 GPL-3.0-only. Their exact release tags, commits, byte sizes, URLs, and SHA-256
 digests are pinned in `third-party/boot-launch-dependencies.lock.json`.
 
-Xovi remains tethered by design: this project does not create a persistent
-`xochitl.service` preload override. After a normal restart the tablet returns
-to stock behavior unless the user explicitly starts Xovi again. This follows
-the upstream warning against automatic boot-time injection.
+Upstream Xovi is tethered by design and warns against a persistent
+`xochitl.service` preload override, because a `xovi.so` that does not match the
+running `xochitl` can leave the stock UI restarting in a loop.
+
+This project does make Xovi persistent, because without it the Android entry
+vanishes from the app menu at every reboot and re-entering Android requires a
+PC, which is not a usable product. It does so without writing a boot-time
+preload override, and the upstream concern is addressed rather than ignored:
+
+- Nothing is written into `xochitl.service.d`. That directory belongs to Xovi,
+  which mounts its own tmpfs over it. The installer adds one separate unit,
+  `/etc/systemd/system/paper-xovi.service`, that runs upstream's own
+  `xovi/start` after the encrypted home volume is mounted.
+- The unit is ordered `After=home.mount xochitl.service`. The stock UI is never
+  delayed. A boot-time preload cannot work here anyway: `xovi.so` lives on
+  `/home`, which mounts about 1.6 seconds after `xochitl` starts, so `ld.so`
+  reports `cannot be preloaded: ignored`. Ordering `xochitl.service` after
+  `home.mount` to fix that tripped reMarkable's own boot watchdog, which
+  rebooted the tablet three times and handed the active slot to root B
+  (hardware, 2026-08-22).
+- Nothing depends on the unit and it is `Type=oneshot`, so a failure cannot
+  affect the boot. `ConditionPathExists` skips it when Xovi is absent.
+- The installer accepts one stock version (3.27.3.0) and the OTA guard masks
+  the stock update services for as long as Android is installed, so `xochitl`
+  cannot be replaced underneath Xovi.
+- The worst case is a stock UI that does not appear. SSH and the rest of the
+  stock system are unaffected, so it is fixed by deleting one file over SSH.
+- Removal deletes the unit and its enable symlink from the stock root and from
+  the running system.
+
+Boot order is not modified: an ordinary reboot still starts stock reMarkable OS.

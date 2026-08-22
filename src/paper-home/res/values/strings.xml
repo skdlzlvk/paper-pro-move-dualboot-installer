@@ -92,7 +92,7 @@
     <string name="wifi_scan_permission_required">Wi-Fi scan permission is required</string>
     <string name="wifi_change_failed">Could not change Wi-Fi state.</string>
     <string name="wifi_change_permission_missing">Wi-Fi change permission is unavailable.</string>
-    <string name="wifi_eap_requires_settings">Enterprise EAP networks require Android advanced settings.</string>
+    <string name="wifi_eap_requires_settings">Enterprise networks are set up in Android settings. Opening them now.</string>
     <string name="wifi_save_failed">Could not save the network in Android.</string>
     <string name="wifi_enable_network_failed">Could not activate the network.</string>
     <string name="wifi_connect_permission_missing">Network connection permission is unavailable.</string>

@@ -40,20 +40,45 @@ separately authored proprietary product.
 That is a deliberate split, so it is worth stating plainly rather than letting
 you find out by clicking:
 
-- the part that runs on your tablet is open, auditable and GPL-3.0;
+- the integration layer that runs on your tablet is open and GPL-3.0: the E Ink
+  display bridge, the launcher and note app, the host integration runtime, the
+  touch and Marker relay, the boot selector and the kernel configuration;
+- the Android base underneath it is **not** built here. It is reDroid's
+  published Android 16 arm64-only image, altered by exactly one same-length
+  line in `init.rc` with the input and output hashes pinned in the build tool.
+  There is no AOSP source tree in this repository, and no device vendor image
+  is involved at all: graphics go through reDroid's own gralloc and hwcomposer
+  with the E Ink bridge behind them, not a vendor HAL;
 - the part that writes to your tablet's partitions is maintained, tested and
   distributed by one person, and is not published.
+
+Calling the whole tablet side "auditable" was too strong, and that wording was
+corrected on 2026-08-22 after an AOSP developer pointed it out publicly. The
+integration layer is auditable. The Android base is a pinned third-party image,
+and the honest claim is reproducibility, not authorship.
 
 This repository alone will not install anything. There is no payload here — no
 Android root filesystem, no kernel binary, no installer.
 
 ## How it works
 
-The tablet has two system partitions. Stock reMarkable OS 3.27.3.0 lives on
-`root_a` and is never written. Android is installed onto the inactive `root_b`,
-and a temporary boot menu starts it once per request — a reboot always returns
-to stock. `root_a`, both bootloaders, the partition table and your documents are
-never modified.
+The tablet has two system partitions. Stock reMarkable OS 3.27.3.0 stays on
+`root_a` and remains the default: Android is installed onto the inactive
+`root_b`, and every reboot returns to stock unless you explicitly pick Android
+from the app menu. Both bootloaders, the partition table and your documents are
+never touched.
+
+The installer adds one thing to the stock partition: a systemd unit,
+`/etc/systemd/system/paper-xovi.service`, and the symlink that enables it. After
+the encrypted home volume is mounted it runs Xovi's own `start` script, which is
+what puts the Android entry in the app menu. Without it the entry disappears at
+the next reboot and you would need a PC to get back into Android.
+
+The unit deliberately runs *after* the stock UI rather than before it. reMarkable
+has its own boot watchdog that reboots the tablet when the stock UI is late, and
+three of those hand the active slot to the other partition — so nothing here is
+allowed to delay stock. No stock file is replaced or patched, the boot order is
+unchanged, nothing depends on the unit, and removal deletes it.
 
 Removal restores a complete, hash-verified 4 GiB backup of `root_b` that is
 required before anything is installed, and leaves the tablet as plain stock.
@@ -82,11 +107,19 @@ partition-writing code, and reading-app DRM behaviour. Details in
 
 ## Getting the installer
 
-The maintained prebuilt Windows package goes to sponsors at the **US$10/month**
-tier: <https://github.com/sponsors/skdlzlvk>
+**US$15, and the build you download keeps working.** There is no licence key,
+no activation and no phone-home, so cancelling cannot touch a tablet you have
+already set up: <https://github.com/sponsors/skdlzlvk>
 
-It funds test hardware and the compatibility work that every stock firmware
-update makes necessary. Sponsors get the maintained build and its updates.
+It is a *monthly* tier for one boring reason. GitHub will only attach the
+private download repository to a monthly tier, so that is the only way you get
+access the moment you sponsor instead of waiting for me to invite you by hand.
+Sponsor, download, cancel — that is a one-time US$15 and nothing recurring.
+Come back and sponsor again whenever there is an update you actually want.
+
+Staying subscribed is worth it only if you would rather not think about it:
+every stock firmware release can break the install path, and keeping up with
+that is the ongoing work this funds.
 
 Sponsorship does not affect anyone's rights to the GPL-3.0 code in this
 repository, and the GPL-2.0 kernel source offer in
