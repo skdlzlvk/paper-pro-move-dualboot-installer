@@ -11,22 +11,26 @@ The Android slot's kernel is GPL-2.0. The written corresponding-source offer in
 [KERNEL-SOURCE.md](docs/KERNEL-SOURCE.md) is honoured for anyone who receives a
 binary, sponsor or not.
 
-## US$15, and why it is billed monthly
+## US$15 one-time purchase
 
-**The build you download keeps working.** There is no activation or licence key
-in the software, it cannot remotely disable an installed tablet, and cancelling
-takes nothing away from a tablet you have already set up.
+US$15 buys the maintained Windows installer for the Paper Pro Move. It also
+includes future compatibility fixes required by stock reMarkable OS updates for
+that device. A stock update will not require the same purchaser to pay again.
 
-It is a monthly tier for one boring reason: GitHub will only attach the private
-download repository to a monthly tier. That is the only way you get access the
-moment you sponsor, instead of waiting for me to invite you by hand. So
-**sponsor, download, and cancel** — that is a one-time US$15 with nothing
-recurring, and you can come back and sponsor again whenever there is an update
-you actually want. Two updates in a year is US$30, not US$180.
+The checkout currently appears as a monthly GitHub Sponsors tier because
+GitHub can only attach a private download repository to a recurring tier. You
+may cancel after the first month. The installer contains no activation, licence
+key or phone-home and cannot remotely disable a tablet you have already set up.
 
-Staying subscribed is worth it only if you would rather not think about it.
-What lapses when sponsorship lapses is access to *future* downloads, nothing
-else.
+GitHub automatically removes private-repository access after cancellation. I am
+therefore moving update delivery to a separate entitlement system that records
+the original purchase. Until that migration is complete, keep the GitHub
+account used for the first payment so I can restore access to a covered update
+without charging you again.
+
+Remaining subscribed is optional. It supports continued development, test
+hardware and work on additional reMarkable models; it is not required for
+Paper Pro Move compatibility updates covered by the original purchase.
 
 I will not charge twice for fixing my own defects. If a build you paid for
 turns out to be broken, say so and the fix is free.
@@ -38,9 +42,8 @@ recovery flow, distributed as a versioned build with checksums and release
 notes.
 
 - builds tested against the stock firmware versions listed as supported;
-- compatibility updates while sponsorship is active — every stock firmware
-  release can break the install path, and keeping up with that is the ongoing
-  work sponsorship funds;
+- future Paper Pro Move compatibility updates when stock firmware changes the
+  install path;
 - priority triage for installation and recovery regressions.
 
 This pays for the proprietary installer, the test hardware, the maintained
@@ -49,8 +52,9 @@ not an exclusive license to it. Source and redistribution rights for the
 GPL-3.0 runtime published here are unaffected.
 
 A package that has already been downloaded keeps working; it contains no
-activation check and cannot remotely disable an installed tablet. What lapses
-when sponsorship lapses is access to future maintained downloads.
+activation check and cannot remotely disable an installed tablet. Cancelling
+the recurring GitHub tier does not end the original purchaser's eligibility for
+future Paper Pro Move compatibility updates.
 
 The package contains no reMarkable firmware, no proprietary reMarkable code, no
 Google Mobile Services, no third-party application packages, no device backups,

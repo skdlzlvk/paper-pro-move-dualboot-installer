@@ -107,19 +107,25 @@ partition-writing code, and reading-app DRM behaviour. Details in
 
 ## Getting the installer
 
-**US$15, and the build you download keeps working.** There is no licence key,
-no activation and no phone-home, so cancelling cannot touch a tablet you have
-already set up: <https://github.com/sponsors/skdlzlvk>
+**US$15 is a one-time purchase for the Paper Pro Move Windows installer.** The
+checkout currently appears as a monthly GitHub Sponsors tier because GitHub can
+only grant automatic private-repository access from a recurring tier. You may
+cancel after the first month.
 
-It is a *monthly* tier for one boring reason. GitHub will only attach the
-private download repository to a monthly tier, so that is the only way you get
-access the moment you sponsor instead of waiting for me to invite you by hand.
-Sponsor, download, cancel — that is a one-time US$15 and nothing recurring.
-Come back and sponsor again whenever there is an update you actually want.
+That first payment also includes future compatibility fixes needed when
+reMarkable updates the Paper Pro Move. You will not be asked to pay another
+US$15 simply because a stock OS update broke the install path.
 
-Staying subscribed is worth it only if you would rather not think about it:
-every stock firmware release can break the install path, and keeping up with
-that is the ongoing work this funds.
+GitHub removes private-repository access when a recurring sponsorship ends, so
+I am moving update delivery to a separate entitlement system that remembers the
+original purchase. Until that migration is complete, keep the GitHub account
+used for the first payment so I can restore update access without charging you
+again: <https://github.com/sponsors/skdlzlvk>
+
+Remaining subscribed is optional support for continued development, testing
+hardware and work on additional reMarkable models. It is not required to keep
+receiving Paper Pro Move compatibility updates covered by the original
+purchase.
 
 Sponsorship does not affect anyone's rights to the GPL-3.0 code in this
 repository, and the GPL-2.0 kernel source offer in

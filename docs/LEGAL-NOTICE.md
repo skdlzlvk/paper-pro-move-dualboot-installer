@@ -53,16 +53,22 @@ receives a binary, whether or not they sponsor the project.
 
 ## Sponsorship
 
-GitHub sponsorship is voluntary support for research, testing, recovery tooling
-and documentation. The US$15 tier provides the maintained prebuilt Windows
-package, verified release metadata, compatibility updates and priority issue
-triage.
+US$15 is treated as a one-time purchase of the maintained prebuilt Windows
+installer for the Paper Pro Move. It includes verified release metadata and
+future compatibility fixes required by stock reMarkable OS updates for that
+device.
 
-It is billed monthly because GitHub will only attach a private download
-repository to a monthly tier. Sponsoring, downloading and cancelling is a
-one-time US$15 charge. The software contains no activation or licence key: a
-package already downloaded continues to work and cannot be remotely disabled.
-What ends when a sponsorship ends is access to future downloads.
+The checkout currently uses a monthly GitHub Sponsors tier only because GitHub
+can automatically attach a private download repository to a recurring tier.
+The purchaser may cancel after the first month. Cancelling does not end
+eligibility for covered Paper Pro Move compatibility updates and does not
+disable a package already downloaded.
+
+GitHub itself removes private-repository access after cancellation, so update
+delivery is being moved to a separate entitlement system that records the
+original purchase. Continued monthly sponsorship is optional support for
+research, testing hardware, recovery tooling, documentation and additional
+device work.
 
 Sponsorship is not an exclusive software license, ownership of the project, a
 guaranteed release date, or a guarantee against device failure. It does not
