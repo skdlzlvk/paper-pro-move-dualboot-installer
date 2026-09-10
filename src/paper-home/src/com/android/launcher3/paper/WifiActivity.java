@@ -532,11 +532,55 @@ public final class WifiActivity extends Activity {
 
     private static final class NetworkRow {
         final RectF bounds = new RectF();
+        final RectF forgetBounds = new RectF();
         String ssidHex;
         String ssid;
         String signal;
         String security;
         boolean known;
+    }
+
+    /*
+     * Removing a saved network. Two saved profiles of the same router were
+     * observed stealing the connection attempt from each other faster than
+     * either could finish authenticating, and the only way to thin them out
+     * was a USB cable - this screen could save networks but never let one
+     * go (owner-reported, 2026-08-28). A first tap arms the button, a second
+     * within three seconds removes every configuration carrying that SSID.
+     */
+    private String armedForgetSsid = "";
+    private final Runnable disarmForget = () -> {
+        armedForgetSsid = "";
+        if (wifiView != null) {
+            wifiView.invalidate();
+        }
+        requestPanelRefresh();
+    };
+
+    private boolean forgetNetwork(String ssid) {
+        int removed = 0;
+        try {
+            List<WifiConfiguration> configured =
+                    wifiManager.getConfiguredNetworks();
+            if (configured != null) {
+                for (WifiConfiguration item : configured) {
+                    if (ssid.equals(cleanSsid(item.SSID))
+                            && wifiManager.removeNetwork(item.networkId)) {
+                        removed++;
+                    }
+                }
+            }
+            if (removed > 0) {
+                wifiManager.saveConfiguration();
+            }
+        } catch (SecurityException ignored) {
+        }
+        Toast.makeText(this,
+                removed > 0
+                        ? getString(R.string.wifi_forgotten, ssid)
+                        : getString(R.string.wifi_save_failed),
+                Toast.LENGTH_SHORT).show();
+        return removed > 0;
     }
 
     private final class WifiView extends View {
@@ -577,6 +621,17 @@ public final class WifiActivity extends Activity {
         }
 
         void setStatus(String raw) {
+            /*
+             * A scan result can reorder the rows between the two taps the
+             * Forget button needs, so the second tap lands on whatever moved
+             * under the finger - observed sending a tap meant for Forget into
+             * a different network's password panel (2026-08-28). While a
+             * Forget is armed the list holds still; the refresh follows three
+             * seconds later with the disarm.
+             */
+            if (!armedForgetSsid.isEmpty()) {
+                return;
+            }
             networks.clear();
             for (String line : raw.split("\\r?\\n")) {
                 String[] fields = line.split("\\|", -1);
@@ -722,6 +777,22 @@ public final class WifiActivity extends Activity {
                                 R.string.wifi_detail_signal, row.signal);
                 text(canvas, detail, 58f, y + 68f,
                         18f, false, quiet);
+                if (row.known) {
+                    boolean armed = row.ssid.equals(armedForgetSsid);
+                    row.forgetBounds.set(
+                            width - (armed ? 460f : 320f), y + 16f,
+                            width - 108f, y + 70f);
+                    box(canvas, row.forgetBounds,
+                            armed ? pale : Color.WHITE, ink);
+                    text(canvas,
+                            getString(armed
+                                    ? R.string.wifi_forget_confirm
+                                    : R.string.wifi_forget),
+                            row.forgetBounds.left + 22f, y + 52f,
+                            19f, true, ink);
+                } else {
+                    row.forgetBounds.setEmpty();
+                }
                 text(canvas, "›", width - 77f, y + 57f,
                         32f, false, ink);
             }
@@ -847,6 +918,27 @@ public final class WifiActivity extends Activity {
             for (NetworkRow row : networks) {
                 if (!row.bounds.contains(x, y)) {
                     continue;
+                }
+                if (row.known && row.forgetBounds.contains(x, y)) {
+                    handler.removeCallbacks(disarmForget);
+                    if (row.ssid.equals(armedForgetSsid)) {
+                        armedForgetSsid = "";
+                        if (forgetNetwork(row.ssid)) {
+                            for (NetworkRow item : networks) {
+                                if (item.ssid.equals(row.ssid)) {
+                                    item.known = false;
+                                    item.forgetBounds.setEmpty();
+                                }
+                            }
+                        }
+                    } else {
+                        armedForgetSsid = row.ssid;
+                        handler.postDelayed(disarmForget, 3000L);
+                    }
+                    invalidate();
+                    handler.postDelayed(
+                            WifiActivity.this::requestPanelRefresh, 180L);
+                    return true;
                 }
                 if (row.known) {
                     connectNetwork(row, null);

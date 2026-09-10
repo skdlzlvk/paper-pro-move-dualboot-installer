@@ -25,6 +25,12 @@
     <string name="tile_wifi_detail">Wireless connection</string>
     <string name="tile_all_apps">All apps</string>
     <string name="tile_all_apps_detail">Full list</string>
+    <string name="tile_usb_drive">USB drive</string>
+    <string name="tile_usb_drive_detail">Copy books from a PC</string>
+    <string name="tile_usb_drive_on">USB drive · on</string>
+    <string name="tile_usb_drive_on_detail">Tap to disconnect</string>
+    <string name="usb_drive_starting">Becoming a USB drive. Wi-Fi keeps working; the USB network stops until you turn this off.</string>
+    <string name="usb_drive_stopping">Leaving USB drive mode…</string>
     <string name="tile_settings">Settings</string>
     <string name="tile_settings_detail">Android</string>
     <string name="tile_app_store">Recommended apps</string>
@@ -41,7 +47,7 @@
     <string name="note_summary">%1$d notes · %2$d templates</string>
 
     <string name="stock_os">Stock OS</string>
-    <string name="stock_os_detail">White background · static-first · screen menu on ○ button</string>
+    <string name="stock_os_detail">White background · static-first · display menu: the Screen tile</string>
     <string name="app_open_failed">%1$s could not be opened.</string>
     <string name="ridi_not_found">RIDI is not installed.</string>
     <string name="aurora_not_found">Aurora Store is not installed.</string>
@@ -142,7 +148,12 @@
     <string name="display_poweroff_disabled">⏻  Power off after lock · Off</string>
     <string name="display_poweroff_minutes">⏻  Power off after lock · %1$d min</string>
     <string name="display_invert">◐  Invert monochrome</string>
+    <string name="display_usb_drive_off">⇄  Connect as USB drive</string>
+    <string name="display_usb_drive_on">⇄  USB drive  ·  connected</string>
+    <string name="display_usb_drive_starting">Connecting as a USB drive…</string>
+    <string name="display_usb_drive_stopping">Disconnecting the USB drive…</string>
     <string name="action_close">×  Close</string>
+    <string name="display_mode_active">%1$s  ·  in use</string>
     <string name="display_mode_selected">%1$s mode</string>
     <string name="display_fixed_mono">Fixed monochrome mode</string>
     <string name="display_auto_color_enabled">Color settles when the screen stops</string>
@@ -322,4 +333,15 @@
     <string name="display_text_contrast_dark">dark</string>
     <string name="display_text_contrast_darker">darker</string>
     <string name="display_text_contrast_selected">Text darkness: %1$s</string>
+    <string name="tile_screen">Screen</string>
+    <string name="tile_screen_detail">Refresh · light · size</string>
+    <string name="frontlight_panel_screen">Screen</string>
+    <string name="display_ui_size_row">UI size: %1$s</string>
+    <string name="ui_size_default">default</string>
+    <string name="ui_size_large">large</string>
+    <string name="ui_size_larger">largest</string>
+    <string name="ui_size_restart_hint">If nothing changes, restart Android once</string>    <string name="app_detail_re_viewer">Comics and images · built in</string>
+    <string name="wifi_forget">Forget</string>
+    <string name="wifi_forget_confirm">Tap again to remove</string>
+    <string name="wifi_forgotten">%1$s removed</string>
 </resources>

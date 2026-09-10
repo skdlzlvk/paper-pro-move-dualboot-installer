@@ -249,6 +249,41 @@ public final class QuickstepLauncher extends Activity {
         private static final int ACTION_STORE = 8;
         private static final int ACTION_ALL_APPS = 9;
         private static final int ACTION_UPDATE = 10;
+    private static final int ACTION_USB_DRIVE = 11;
+    private static final int ACTION_SCREEN = 12;
+
+    /**
+     * Drive mode is asked for by writing a file the root side watches, the same
+     * channel the display controls already use. It is a tile rather than a row
+     * in the display menu because that menu is reached by a press people do not
+     * find, and a reader who cannot find it has no way to get a book onto the
+     * tablet at all.
+     */
+    private static final String MTP_REQUEST_FILE = "paper-mtp-request";
+    private static final String MTP_STATE_FILE = "paper-mtp-state";
+
+    private boolean usbDriveOn() {
+        try {
+            java.io.File file = new java.io.File(getFilesDir(), MTP_STATE_FILE);
+            if (!file.isFile()) {
+                return false;
+            }
+            byte[] raw = java.nio.file.Files.readAllBytes(file.toPath());
+            return "on".equals(new String(raw, java.nio.charset.StandardCharsets.UTF_8).trim());
+        } catch (Exception error) {
+            return false;
+        }
+    }
+
+    private void requestUsbDrive(boolean wanted) {
+        try (java.io.FileOutputStream output = new java.io.FileOutputStream(
+                new java.io.File(getFilesDir(), MTP_REQUEST_FILE), false)) {
+            output.write((wanted ? "on\n" : "off\n")
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (java.io.IOException error) {
+            android.util.Log.e("PaperHome", "cannot ask for USB drive mode", error);
+        }
+    }
 
         private final Paint paint = new Paint(
                 Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
@@ -317,6 +352,25 @@ public final class QuickstepLauncher extends Activity {
                         getString(R.string.tile_app_store_detail),
                         ACTION_STORE));
             }
+            boolean driveOn = usbDriveOn();
+            toolTiles.add(new Tile(
+                    getString(R.string.category_connection),
+                    getString(driveOn
+                            ? R.string.tile_usb_drive_on
+                            : R.string.tile_usb_drive),
+                    getString(driveOn
+                            ? R.string.tile_usb_drive_on_detail
+                            : R.string.tile_usb_drive_detail),
+                    ACTION_USB_DRIVE));
+            // The display menu's home-screen way in. Its previous entries -
+            // the launcher bar's long press and chevron - died with that bar,
+            // and a Paper Pro owner's photo proved every build since shipped
+            // the menu unreachable (2026-08-28).
+            toolTiles.add(new Tile(
+                    getString(R.string.category_system),
+                    getString(R.string.tile_screen),
+                    getString(R.string.tile_screen_detail),
+                    ACTION_SCREEN));
             toolTiles.add(new Tile(
                     getString(R.string.category_system),
                     getString(R.string.tile_settings),
@@ -484,6 +538,17 @@ public final class QuickstepLauncher extends Activity {
                     drawWifiIcon(canvas, x + 18f, y + 18f,
                             networkConnected, color);
                     break;
+                case ACTION_SCREEN:
+                    // A panel outline with a settle line: the display menu.
+                    canvas.drawRoundRect(new RectF(x + 2f, y + 4f,
+                            x + 34f, y + 28f), 4f, 4f, stroke);
+                    canvas.drawLine(x + 8f, y + 33f,
+                            x + 28f, y + 33f, stroke);
+                    canvas.drawLine(x + 8f, y + 12f,
+                            x + 28f, y + 12f, stroke);
+                    canvas.drawLine(x + 8f, y + 20f,
+                            x + 22f, y + 20f, stroke);
+                    break;
                 case ACTION_STORE:
                     canvas.drawRoundRect(box, 7f, 7f, stroke);
                     canvas.drawLine(x + 10f, y + 12f,
@@ -616,20 +681,26 @@ public final class QuickstepLauncher extends Activity {
                     (right - left - toolGap * 3f) / 4f;
             final float toolY = 1117f;
             final float toolHeight = 142f;
+            // Four to a row, and as many rows as the tiles need. This was a
+            // single hard row of four: the USB drive tile made a fifth, and
+            // the Settings tile it displaced was drawn past the right edge -
+            // invisible on every tablet, which a Paper Pro owner reported as
+            // "no interface setting" (2026-08-28).
             for (int index = 0; index < toolTiles.size(); index++) {
-                float x = left + index * (toolWidth + toolGap);
+                float x = left + (index % 4) * (toolWidth + toolGap);
+                float rowY = toolY + (index / 4) * (toolHeight + toolGap);
                 Tile tile = toolTiles.get(index);
                 tile.bounds.set(
-                        x, toolY, x + toolWidth, toolY + toolHeight);
+                        x, rowY, x + toolWidth, rowY + toolHeight);
                 surface(canvas, tile.bounds, Color.rgb(242, 242, 238));
                 drawTileIcon(canvas, tile.action,
-                        x + 18f, toolY + 17f, ink);
+                        x + 18f, rowY + 17f, ink);
                 text(canvas, fit(tile.title, toolWidth - 28f,
                                 21f, true),
-                        x + 16f, toolY + 91f, 21f, true, ink);
+                        x + 16f, rowY + 91f, 21f, true, ink);
                 text(canvas, fit(tile.detail, toolWidth - 28f,
                                 15f, false),
-                        x + 16f, toolY + 119f, 15f, false, quiet);
+                        x + 16f, rowY + 119f, 15f, false, quiet);
             }
 
             stockButton.set(26f, height - 92f, 178f, height - 28f);
@@ -750,6 +821,26 @@ public final class QuickstepLauncher extends Activity {
                     settings.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
                     startActivity(settings);
                     break;
+                case ACTION_SCREEN:
+                    Intent screenMenu = new Intent(
+                            QuickstepLauncher.this,
+                            com.android.launcher3.paper
+                                    .DisplayControlService.class);
+                    screenMenu.setAction(com.android.launcher3.paper
+                            .DisplayControlService.ACTION_SHOW_MENU);
+                    startService(screenMenu);
+                    break;
+                case ACTION_USB_DRIVE: {
+                    boolean driveOn = usbDriveOn();
+                    requestUsbDrive(!driveOn);
+                    android.widget.Toast.makeText(
+                            QuickstepLauncher.this,
+                            getString(driveOn
+                                    ? R.string.usb_drive_stopping
+                                    : R.string.usb_drive_starting),
+                            android.widget.Toast.LENGTH_LONG).show();
+                    break;
+                }
                 case ACTION_WIFI:
                     Intent wifi = new Intent(
                             QuickstepLauncher.this, WifiActivity.class);

@@ -23,6 +23,15 @@
     <string name="update_ready_detail">릴리스 %1$s가 준비되었습니다.</string>
     <string name="update_staged_detail">릴리스 %1$s의 서명·크기·SHA-256 검증을 통과했습니다. 저장 위치: %2$s</string>
     <string name="update_waiting_applier">오프라인 설치기 필요</string>
+    <string name="update_apply_arm">다음 Android 시작 시 적용</string>
+    <string name="update_armed_title">업데이트가 예약되었습니다</string>
+    <string name="update_armed_detail">다음에 순정 시스템에서 Android를 시작할 때 릴리스 %1$s를 검증 후 적용합니다. 홈 메뉴의 Stock OS로 나갔다가 Android를 다시 시작하세요.</string>
+    <string name="update_apply_cancel">예약 취소</string>
+    <string name="update_applied_title">업데이트 완료</string>
+    <string name="update_applied_detail">%1$s</string>
+    <string name="update_apply_failed_title">업데이트가 거부되었습니다</string>
+    <string name="update_apply_failed_detail">아무것도 바뀌지 않았습니다. %1$s</string>
+    <string name="update_acknowledge">확인</string>
     <string name="update_battery_title">충전 후 다운로드하세요</string>
     <string name="update_battery_detail">현재 배터리는 %1$d%%이며 이 릴리스는 %2$d%% 이상이 필요합니다.</string>
     <string name="update_failed_title">업데이트 거부됨</string>

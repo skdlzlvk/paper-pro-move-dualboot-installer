@@ -25,6 +25,12 @@
     <string name="tile_wifi_detail">无线连接</string>
     <string name="tile_all_apps">所有应用</string>
     <string name="tile_all_apps_detail">完整列表</string>
+    <string name="tile_usb_drive">USB 驱动器</string>
+    <string name="tile_usb_drive_detail">从电脑传书</string>
+    <string name="tile_usb_drive_on">USB 驱动器 · 已开启</string>
+    <string name="tile_usb_drive_on_detail">点按断开</string>
+    <string name="usb_drive_starting">正在切换为 USB 驱动器。Wi-Fi 不受影响，USB 网络会暂停直到关闭。</string>
+    <string name="usb_drive_stopping">正在退出 USB 驱动器模式…</string>
     <string name="tile_settings">设置</string>
     <string name="tile_settings_detail">Android</string>
     <string name="tile_app_store">推荐应用</string>
@@ -41,7 +47,7 @@
     <string name="note_summary">%1$d 条笔记 · %2$d 个模板</string>
 
     <string name="stock_os">原厂系统</string>
-    <string name="stock_os_detail">白色背景 · 静态优先 · 点击 ○ 打开屏幕菜单</string>
+    <string name="stock_os_detail">白色背景 · 静态优先 · 屏幕菜单：Screen 磁贴</string>
     <string name="app_open_failed">无法打开 %1$s。</string>
     <string name="ridi_not_found">未安装 RIDI。</string>
     <string name="aurora_not_found">未安装 Aurora Store。</string>
@@ -142,7 +148,12 @@
     <string name="display_poweroff_disabled">⏻  锁屏后关机 · 关闭</string>
     <string name="display_poweroff_minutes">⏻  锁屏后关机 · %1$d 分钟</string>
     <string name="display_invert">◐  黑白反转</string>
+    <string name="display_usb_drive_off">⇄  连接为 USB 驱动器</string>
+    <string name="display_usb_drive_on">⇄  USB 驱动器  ·  已连接</string>
+    <string name="display_usb_drive_starting">正在连接为 USB 驱动器…</string>
+    <string name="display_usb_drive_stopping">正在断开 USB 驱动器…</string>
     <string name="action_close">×  关闭</string>
+    <string name="display_mode_active">%1$s  ·  使用中</string>
     <string name="display_mode_selected">%1$s模式</string>
     <string name="display_fixed_mono">固定黑白模式</string>
     <string name="display_auto_color_enabled">屏幕静止后切换为彩色</string>
@@ -307,4 +318,15 @@
     <string name="display_text_contrast_dark">加深</string>
     <string name="display_text_contrast_darker">更深</string>
     <string name="display_text_contrast_selected">文字浓度：%1$s</string>
+    <string name="tile_screen">屏幕</string>
+    <string name="tile_screen_detail">刷新 · 灯光 · 大小</string>
+    <string name="frontlight_panel_screen">屏幕</string>
+    <string name="display_ui_size_row">界面大小：%1$s</string>
+    <string name="ui_size_default">默认</string>
+    <string name="ui_size_large">大</string>
+    <string name="ui_size_larger">最大</string>
+    <string name="ui_size_restart_hint">若无变化，请重启一次 Android</string>    <string name="app_detail_re_viewer">漫画与图片 · 内置</string>
+    <string name="wifi_forget">忘记</string>
+    <string name="wifi_forget_confirm">再点一次删除</string>
+    <string name="wifi_forgotten">已删除 %1$s</string>
 </resources>

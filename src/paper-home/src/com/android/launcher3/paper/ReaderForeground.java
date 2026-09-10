@@ -29,7 +29,11 @@ final class ReaderForeground {
             return false;
         }
         String name = packageName.toString();
-        return RecommendedApps.PACKAGE_KINDLE.equals(name)
+        // The bundled comic reader was missing from its own project's reader
+        // list, so page turns in it never reached the page-refresh policy or
+        // the reader grayscale path (2026-08-29).
+        return InstalledApps.PACKAGE_RE_VIEWER.equals(name)
+                || RecommendedApps.PACKAGE_KINDLE.equals(name)
                 || RecommendedApps.PACKAGE_LIBBY.equals(name)
                 || RecommendedApps.PACKAGE_KOBO.equals(name)
                 || RecommendedApps.PACKAGE_PLAY_BOOKS.equals(name)

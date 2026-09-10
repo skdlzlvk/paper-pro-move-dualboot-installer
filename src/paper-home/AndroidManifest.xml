@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.android.launcher3"
-    android:versionCode="3442"
-    android:versionName="2.32.1">
+    android:versionCode="3447"
+    android:versionName="2.36.1">
 
     <uses-sdk
         android:minSdkVersion="28"

@@ -25,6 +25,12 @@
     <string name="tile_wifi_detail">무선 연결</string>
     <string name="tile_all_apps">모든 앱</string>
     <string name="tile_all_apps_detail">전체 목록</string>
+    <string name="tile_usb_drive">USB 드라이브</string>
+    <string name="tile_usb_drive_detail">PC에서 책 옮기기</string>
+    <string name="tile_usb_drive_on">USB 드라이브 · 켜짐</string>
+    <string name="tile_usb_drive_on_detail">누르면 연결 해제</string>
+    <string name="usb_drive_starting">USB 드라이브로 전환합니다. Wi-Fi는 그대로이고, USB 네트워크는 끌 때까지 멈춥니다.</string>
+    <string name="usb_drive_stopping">USB 드라이브 모드를 끄는 중…</string>
     <string name="tile_settings">설정</string>
     <string name="tile_settings_detail">Android</string>
     <string name="tile_app_store">추천 앱</string>
@@ -41,7 +47,7 @@
     <string name="note_summary">%1$d개 노트 · 템플릿 %2$d종</string>
 
     <string name="stock_os">순정 OS</string>
-    <string name="stock_os_detail">흰 배경 · 정지 화면 우선 · 화면 메뉴는 ○ 버튼</string>
+    <string name="stock_os_detail">흰 배경 · 정지 화면 우선 · 화면 메뉴는 Screen 타일</string>
     <string name="app_open_failed">%1$s 앱을 열 수 없습니다.</string>
     <string name="ridi_not_found">리디북스를 찾을 수 없습니다.</string>
     <string name="aurora_not_found">Aurora Store를 찾을 수 없습니다.</string>
@@ -142,7 +148,12 @@
     <string name="display_poweroff_disabled">⏻  잠금 후 종료 · 끔</string>
     <string name="display_poweroff_minutes">⏻  잠금 후 종료 · %1$d분</string>
     <string name="display_invert">◐  흑백 반전</string>
+    <string name="display_usb_drive_off">⇄  USB 드라이브로 연결</string>
+    <string name="display_usb_drive_on">⇄  USB 드라이브  ·  연결됨</string>
+    <string name="display_usb_drive_starting">USB 드라이브로 연결하는 중…</string>
+    <string name="display_usb_drive_stopping">USB 드라이브 연결을 끊는 중…</string>
     <string name="action_close">×  닫기</string>
+    <string name="display_mode_active">%1$s  ·  사용 중</string>
     <string name="display_mode_selected">%1$s 모드</string>
     <string name="display_fixed_mono">흑백 고정 모드</string>
     <string name="display_auto_color_enabled">멈추면 컬러로 정착합니다</string>
@@ -322,4 +333,15 @@
     <string name="display_text_contrast_dark">진하게</string>
     <string name="display_text_contrast_darker">더 진하게</string>
     <string name="display_text_contrast_selected">글자 진하기: %1$s</string>
+    <string name="tile_screen">화면</string>
+    <string name="tile_screen_detail">새로고침 · 조명 · 크기</string>
+    <string name="frontlight_panel_screen">화면</string>
+    <string name="display_ui_size_row">화면 크기: %1$s</string>
+    <string name="ui_size_default">기본</string>
+    <string name="ui_size_large">크게</string>
+    <string name="ui_size_larger">가장 크게</string>
+    <string name="ui_size_restart_hint">변화가 없으면 Android를 한 번 다시 시작하세요</string>    <string name="app_detail_re_viewer">만화·이미지 뷰어 · 기본 탑재</string>
+    <string name="wifi_forget">지우기</string>
+    <string name="wifi_forget_confirm">한 번 더 누르면 삭제</string>
+    <string name="wifi_forgotten">%1$s 삭제됨</string>
 </resources>

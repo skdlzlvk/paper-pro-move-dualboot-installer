@@ -27,12 +27,14 @@
 #include <cstdlib>
 #include <cstring>
 #include <deque>
+#include <dirent.h>
 #include <fcntl.h>
 #include <linux/input.h>
 #include <memory>
 #include <mutex>
 #include <poll.h>
 #include <signal.h>
+#include <string>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
@@ -45,6 +47,8 @@
 #include <vector>
 
 #include "epframebuffer.h"
+#include "color-submit-guard.h"
+#include "eink-region-conversion.h"
 
 namespace {
 
@@ -72,10 +76,95 @@ constexpr char LockStylePath[] =
 constexpr char AutoPowerOffPath[] =
     "/android-data/data/com.android.launcher3/files/"
     "paper-auto-poweroff-minutes";
-constexpr char DeviceBatteryPath[] =
-    "/sys/class/power_supply/max77818_battery/capacity";
-constexpr char ChargerOnlinePath[] =
-    "/sys/class/power_supply/max77818-charger/online";
+/*
+ * Per-frame submit tracing, off unless the control file says "1". The
+ * standing frame log samples the first eight frames and every twentieth,
+ * which oversampled boot and hid exactly the animation bursts that matter:
+ * the Paper Pro tuning numbers were once set from that biased sample. With
+ * the file set, every displayed frame logs its submit time, so a slow
+ * stretch can be measured on a tablet in the field instead of guessed at.
+ */
+constexpr char FrameTracePath[] =
+    "/android-data/data/com.android.launcher3/files/paper-frame-trace";
+// Exact full-frame fallback for controlled A/B comparisons and rollback.
+// Presence alone is intentional: no polling worker or persistent property.
+constexpr char FullConversionPath[] =
+    "/android-data/data/com.android.launcher3/files/paper-full-frame-conversion";
+/*
+ * The fuel gauge and the charger are named per device: max77818_battery and
+ * max77818-charger on a Move, max1726x_battery and max77963-charger on a Paper
+ * Pro. Hard-coding the Move names did not crash here, because readInteger
+ * falls back, but on any other tablet the standby screen would have said "not
+ * charging" and shown whatever the fallback was (2026-08-23). Resolve by
+ * power-supply type instead, the same rule rm-native-controls.sh uses. The
+ * Marker's own cells must never be taken: they report type Wireless, and
+ * nfc-marker-battery even exposes an online file, so the name check matters.
+ */
+static std::string resolvePowerSupplyPath(bool wantBattery)
+{
+    static constexpr char root[] = "/sys/class/power_supply";
+    DIR *directory = ::opendir(root);
+    if (directory == nullptr)
+        return std::string();
+    std::string found;
+    while (const dirent *entry = ::readdir(directory)) {
+        const std::string name = entry->d_name;
+        if (name == "." || name == ".." || name.find("marker") != std::string::npos)
+            continue;
+        const std::string base = std::string(root) + "/" + name;
+        QFile typeFile(QString::fromStdString(base + "/type"));
+        if (!typeFile.open(QIODevice::ReadOnly))
+            continue;
+        const QByteArray type = typeFile.read(32).trimmed();
+        if (wantBattery) {
+            if (type != "Battery")
+                continue;
+            const std::string capacity = base + "/capacity";
+            if (::access(capacity.c_str(), R_OK) == 0) { found = capacity; break; }
+        } else {
+            if (type == "Battery" || type == "Wireless" || type == "Unknown" || type.isEmpty())
+                continue;
+            const std::string online = base + "/online";
+            if (::access(online.c_str(), R_OK) == 0) { found = online; break; }
+        }
+    }
+    ::closedir(directory);
+    return found;
+}
+
+static const char *deviceBatteryPath()
+{
+    static const std::string path = resolvePowerSupplyPath(true);
+    return path.c_str();
+}
+
+static const char *chargerOnlinePath()
+{
+    static const std::string path = resolvePowerSupplyPath(false);
+    return path.c_str();
+}
+/*
+ * Which tablet this is. Read once; several things below need it, and the
+ * charger module used to read it a second time for itself.
+ */
+static const std::string &deviceTreeModel()
+{
+    static const std::string model = [] {
+        std::string value;
+        QFile file(QStringLiteral("/proc/device-tree/model"));
+        if (file.open(QIODevice::ReadOnly))
+            value = file.read(64).trimmed().toStdString();
+        value.erase(std::remove(value.begin(), value.end(), '\0'), value.end());
+        return value;
+    }();
+    return model;
+}
+
+static bool deviceIsPaperPro()
+{
+    return deviceTreeModel() == "reMarkable Ferrari";
+}
+
 constexpr char KoreanFontPath[] =
     "/android/system/fonts/NotoSansCJK-Regular.ttc";
 constexpr char UiLocalePath[] =
@@ -123,12 +212,39 @@ constexpr char DeveloperLauncherTargetPath[] =
     "Launcher3QuickStep.apk";
 constexpr char DeveloperLauncherBackupPath[] =
     "/android-data/local/tmp/Launcher3QuickStep.apk.before-r12";
-constexpr int AndroidWidth = 954;
-constexpr int AndroidHeight = 1696;
+/*
+ * The Android framebuffer geometry, per tablet. There is no scaler anywhere in
+ * this file: Android's frame is painted into the EP framebuffer at 1:1 from
+ * (0,0), and the pen is normalised against these two numbers. So they are not
+ * a preference, they are what the panel is - 954x1696 on a Move, 1620x2160 on
+ * a Paper Pro, which is also what the library reports when it opens the panel
+ * and what the profile table hands Android as redroid_width/height.
+ *
+ * They were the Move's values on both tablets until 2026-08-24. Android came
+ * up on a Paper Pro and drew into a 1620x2160 buffer with a 954-wide stride,
+ * which puts each row a little further left than the last: the screen filled
+ * with sheared bands of torn text over a dark field.
+ *
+ * Runtime values rather than constexpr, so the fifty-odd places that use them
+ * do not have to change. Nothing here is used before main() runs.
+ */
+static int androidGeometryWidth()
+{
+    return deviceIsPaperPro() ? 1620 : 954;
+}
+
+static int androidGeometryHeight()
+{
+    return deviceIsPaperPro() ? 2160 : 1696;
+}
+
+const int AndroidWidth = androidGeometryWidth();
+const int AndroidHeight = androidGeometryHeight();
 constexpr int NavigationBarHeight = 79;
 constexpr int BytesPerPixel = 4;
-constexpr int AndroidStrideBytes = AndroidWidth * BytesPerPixel;
-constexpr size_t VisibleBytes =
+/* Derived from the per-tablet geometry, so these follow it at run time too. */
+const int AndroidStrideBytes = AndroidWidth * BytesPerPixel;
+const size_t VisibleBytes =
     static_cast<size_t>(AndroidStrideBytes) * AndroidHeight;
 constexpr int NativeHandleBytes = 64;
 constexpr uint32_t NativeHandleVersion = 12;
@@ -173,6 +289,10 @@ constexpr int TouchFastTailMs = 220;
 constexpr int TouchSettleDelayMs = 520;
 constexpr int TouchStatePollMs = 24;
 constexpr int ColorSettleDelayMs = 2200;
+// While a reader is in the foreground the color settle waits for a real
+// pause instead of the ordinary idle gap; see the reader note at the settle
+// decision.
+constexpr int ReaderColorSettleDelayMs = 10000;
 constexpr int ColorControlPollMs = 200;
 constexpr int ColorAutoCooldownMs = 12000;
 constexpr int ColorMaximumCooldownMs = 60000;
@@ -203,9 +323,20 @@ constexpr int ReaderPageAreaPercent = 60;
  */
 constexpr int ReaderPageMinimumGapMs = 600;
 constexpr int ReaderCleanupIdleMs = 700;
+/*
+ * The page-refresh policy waits for ReaderCleanupIdleMs of panel silence, but
+ * some readers keep talking after a page turn - the bundled comic reader
+ * follows each page with overlay and image-upgrade repaints for a couple of
+ * seconds - so the "quiet moment" never comes and the sharpening flash the
+ * owner is waiting for arrives five-plus seconds late, or not before the next
+ * turn (measured 2026-08-29). Once a cleanup has been owed for MaxWait since
+ * the page turn, a short MinGap of silence is enough.
+ */
+constexpr int ReaderCleanupMaxWaitMs = 1500;
+constexpr int ReaderCleanupMinGapMs = 250;
 constexpr int ReaderDefaultPagesPerCleanup = 5;
 constexpr int ReaderPolicyPollMs = 1000;
-constexpr qint64 PanelArea =
+const qint64 PanelArea =
     static_cast<qint64>(AndroidWidth) * AndroidHeight;
 
 volatile sig_atomic_t stopRequested = 0;
@@ -549,11 +680,62 @@ bool runHostCommand(const char *program, char *const arguments[])
     return succeeded;
 }
 
+/*
+ * The Type-C controller is an FUSB303B on both tablets, but on a different I2C
+ * bus: 1-0021 on a Move, 4-0021 on a Paper Pro. The charger in front of it is
+ * max77818 on a Move and max77963 on a Paper Pro. This function had all of
+ * those as Move literals, and on a Paper Pro it modprobed a module that does
+ * not exist and then looked for the controller at an address that is on
+ * another bus, while the real controller sat already bound at 4-0021
+ * (trial log, 2026-08-23: charger=0 module=0 carrier=1). Find the controller
+ * where the kernel says it is, and name the charger from the tablet model.
+ */
+static std::string fusb303bDeviceName()
+{
+    /* A bound controller is a symlink under its driver's directory. */
+    static constexpr char driverDirectory[] = "/sys/bus/i2c/drivers/fusb303b";
+    if (DIR *directory = ::opendir(driverDirectory)) {
+        std::string bound;
+        while (const dirent *entry = ::readdir(directory)) {
+            const std::string name = entry->d_name;
+            if (name.size() > 5 && name.compare(name.size() - 5, 5, "-0021") == 0) {
+                bound = name;
+                break;
+            }
+        }
+        ::closedir(directory);
+        if (!bound.empty())
+            return bound;
+    }
+    /* Not bound yet: the address is the same on every reMarkable, only the bus differs. */
+    for (const char *candidate : {"4-0021", "1-0021"}) {
+        const std::string device = std::string("/sys/bus/i2c/devices/") + candidate;
+        if (::access(device.c_str(), F_OK) == 0)
+            return candidate;
+    }
+    return "1-0021";
+}
+
+static const char *chargerModuleName()
+{
+    return deviceIsPaperPro() ? "max77963_charger" : "max77818_charger";
+}
+
 void ensureUsbTypeCNegotiation()
 {
+    const std::string controller = fusb303bDeviceName();
+    const std::string controllerDriver =
+        "/sys/bus/i2c/devices/" + controller + "/driver";
+    const std::string queuePath =
+        "/sys/bus/i2c/devices/" + controller + "/queue_charging_negotiation";
+    const std::string chargerDriver =
+        std::string("/sys/bus/platform/devices/") +
+        (std::string(chargerModuleName()) == "max77963_charger"
+             ? "max77963-charger" : "max77818-charger") + "/driver";
+    const std::string bindLine = controller + "\n";
     char *const chargerArguments[] = {
         const_cast<char *>("/sbin/modprobe"),
-        const_cast<char *>("max77818_charger"),
+        const_cast<char *>(chargerModuleName()),
         nullptr,
     };
     char *const modprobeArguments[] = {
@@ -569,28 +751,23 @@ void ensureUsbTypeCNegotiation()
         const_cast<char *>("up"),
         nullptr,
     };
-    constexpr char QueuePath[] =
-        "/sys/bus/i2c/devices/1-0021/"
-        "queue_charging_negotiation";
+    const char *const QueuePath = queuePath.c_str();
 
     const bool chargerReady =
-        ::access("/sys/bus/platform/devices/max77818-charger/driver",
-                 F_OK) == 0 ||
+        ::access(chargerDriver.c_str(), F_OK) == 0 ||
         runHostCommand("/sbin/modprobe", chargerArguments);
-    bool moduleReady =
-        ::access("/sys/bus/i2c/devices/1-0021/driver", F_OK) == 0;
+    bool moduleReady = ::access(controllerDriver.c_str(), F_OK) == 0;
     if (!moduleReady && chargerReady) {
         runHostCommand("/sbin/modprobe", modprobeArguments);
         const int bind = ::open(
             "/sys/bus/i2c/drivers/fusb303b/bind",
             O_WRONLY | O_CLOEXEC);
         if (bind >= 0) {
-            const ssize_t written = ::write(bind, "1-0021\n", 7);
+            const ssize_t written =
+                ::write(bind, bindLine.c_str(), bindLine.size());
             ::close(bind);
-            moduleReady = written == 7 ||
-                          ::access(
-                              "/sys/bus/i2c/devices/1-0021/driver",
-                              F_OK) == 0;
+            moduleReady = written == static_cast<ssize_t>(bindLine.size()) ||
+                          ::access(controllerDriver.c_str(), F_OK) == 0;
         }
     }
     QFile carrierFile(
@@ -1394,6 +1571,14 @@ QRect changedRectangle(const unsigned char *frame,
 {
     return rectanglesBoundingRect(
         changedRectangles(frame, previous, firstFrame));
+}
+
+bool readFrameTrace()
+{
+    QFile file(QString::fromLatin1(FrameTracePath));
+    if (!file.open(QIODevice::ReadOnly))
+        return false;
+    return file.read(8).trimmed() == "1";
 }
 
 DisplayProfile readDisplayProfile()
@@ -2300,8 +2485,8 @@ void drawSleepPage(QImage &destination)
         return ok ? value : fallback;
     };
     const int battery =
-        std::clamp(readInteger(DeviceBatteryPath, 0), 0, 100);
-    const bool charging = readInteger(ChargerOnlinePath, 0) == 1;
+        std::clamp(readInteger(deviceBatteryPath(), 0), 0, 100);
+    const bool charging = readInteger(chargerOnlinePath(), 0) == 1;
     const int autoPoweroff =
         std::clamp(readInteger(AutoPowerOffPath, 30), 0, 180);
 
@@ -2444,7 +2629,7 @@ void drawAutoPoweroffHint(QPainter &painter, const QImage &destination)
         const int value = file.read(32).trimmed().toInt(&ok);
         return ok ? value : fallback;
     };
-    const bool charging = readInteger(ChargerOnlinePath, 0) == 1;
+    const bool charging = readInteger(chargerOnlinePath(), 0) == 1;
     const int autoPoweroff =
         std::clamp(readInteger(AutoPowerOffPath, 30), 0, 180);
     QString detail;
@@ -2666,129 +2851,246 @@ void convertForEink(const unsigned char *source,
      * font hinting, thin separators, book illustrations, and disabled-state UI
      * while avoiding Gallery 3 color flashing.
      */
-    for (int y = 0; y < AndroidHeight; ++y) {
-        for (int x = 0; x < AndroidWidth; ++x) {
-            const size_t offset =
-                static_cast<size_t>(y) * AndroidStrideBytes +
-                static_cast<size_t>(x) * BytesPerPixel;
-            const int red = source[offset + 0];
-            const int green = source[offset + 1];
-            const int blue = source[offset + 2];
-            int luminance =
-                (red * 77 + green * 150 + blue * 29 + 128) >> 8;
-            if (inverted)
-                luminance = 255 - luminance;
-            const unsigned char value =
-                quantizedLuminance(luminance, x, y, profile);
-            destination[offset + 0] = value;
-            destination[offset + 1] = value;
-            destination[offset + 2] = value;
-            destination[offset + 3] = 0xff;
-        }
-    }
+    paper::convertEinkRegion(source, destination, AndroidWidth, AndroidHeight,
+                            AndroidStrideBytes, 0, 0, AndroidWidth, AndroidHeight,
+                            inverted, [profile](int value, int x, int y) {
+        return quantizedLuminance(value, x, y, profile);
+    });
 }
 
-QRect submitSettledColor(EPFramebufferFusion *framebuffer,
+size_t convertForEinkRegions(const unsigned char *source,
+                            QByteArray &output, bool inverted,
+                            DisplayProfile profile,
+                            const std::vector<QRect> &regions)
+{
+    // The caller forces complete invalidation before the first use and on
+    // any profile/invert/contrast/wake change. No pixel is sparsely sampled.
+    size_t convertedPixels = 0;
+    auto *destination = reinterpret_cast<unsigned char *>(output.data());
+    for (const QRect &region : regions) {
+        convertedPixels += paper::convertEinkRegion(
+            source, destination, AndroidWidth, AndroidHeight, AndroidStrideBytes,
+            region.x(), region.y(), region.width(), region.height(), inverted,
+            [profile](int value, int x, int y) {
+                return quantizedLuminance(value, x, y, profile);
+            });
+    }
+    return convertedPixels;
+}
+
+paper_move::ColorControlStamp colorControlStamp(const char *path)
+{
+    struct ControlErrorLog {
+        const char *path;
+        paper_move::ColorControlErrorLogState state;
+    };
+    // Only the panel owner calls this function. Keep failure diagnostics local
+    // to the five color controls, without introducing another logging thread.
+    static std::array<ControlErrorLog, 5> errorLogs{{
+        {ColorModePath, {}}, {InvertModePath, {}}, {ScreenStatePath, {}},
+        {NoteActivePath, {}}, {ReaderActivePath, {}}}};
+    paper_move::ColorControlStamp stamp;
+    struct stat status;
+    const int statResult = ::stat(path, &status);
+    const int statError = statResult == 0 ? 0 : errno;
+    const int controlError = statError == ENOENT ? 0 : statError;
+    for (auto &entry : errorLogs) {
+        if (std::strcmp(entry.path, path) != 0)
+            continue;
+        const auto nowMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count();
+        if (paper_move::reportColorControlError(entry.state, controlError, nowMilliseconds)) {
+            writeLog(QStringLiteral("WARNING color control unavailable; deferring color "
+                                    "path=%1 errno=%2 (%3)")
+                         .arg(QString::fromLocal8Bit(path))
+                         .arg(controlError)
+                         .arg(QString::fromLocal8Bit(std::strerror(controlError))));
+        }
+        break;
+    }
+    if (statResult != 0) {
+        stamp.readable = statError == ENOENT;
+        return stamp;
+    }
+    stamp.exists = true;
+    stamp.device = status.st_dev;
+    stamp.inode = status.st_ino;
+    stamp.size = status.st_size;
+    stamp.modifiedSeconds = status.st_mtim.tv_sec;
+    stamp.modifiedNanoseconds = status.st_mtim.tv_nsec;
+    stamp.changedSeconds = status.st_ctim.tv_sec;
+    stamp.changedNanoseconds = status.st_ctim.tv_nsec;
+    return stamp;
+}
+
+paper_move::ColorSubmitState captureColorSubmitState(
+    FrameMailbox &mailbox, std::shared_ptr<const QByteArray> *frame = nullptr)
+{
+    paper_move::ColorSubmitState state;
+    state.touchActive = ::access(TouchActivePath, F_OK) == 0;
+    state.typingActive = ::access(TypingActivePath, F_OK) == 0;
+    state.screenOff = readScreenOff();
+    state.refreshPending = ::access(RefreshRequestPath, F_OK) == 0 ||
+        ::access(NoteOverlayResetPath, F_OK) == 0 ||
+        ::access(NoteToolbarRefreshPath, F_OK) == 0 ||
+        ::access(GhostRequestPath, F_OK) == 0;
+    const ColorMode mode = readColorMode();
+    state.colorEnabled = mode != ColorMode::Mono;
+    state.colorMode = static_cast<int>(mode);
+    state.inverted = readInvertMode();
+    state.noteActive = readNoteActive();
+    state.readerActive = readReaderActive();
+    state.controls = {{colorControlStamp(ColorModePath),
+                       colorControlStamp(InvertModePath),
+                       colorControlStamp(ScreenStatePath),
+                       colorControlStamp(NoteActivePath),
+                       colorControlStamp(ReaderActivePath)}};
+    // Take the receiver generations last. Do not hold this mutex through
+    // conversion, painting, swapBuffers or the slow physical waveform wait.
+    const std::lock_guard<std::mutex> lock(mailbox.mutex);
+    if (frame)
+        *frame = mailbox.latest;
+    state.frames = mailbox.receivedFrames;
+    state.penReports = mailbox.receivedPenReports;
+    state.penPresence = mailbox.penPresenceGeneration;
+    state.penInRange = mailbox.penInRange;
+    state.penPending = !mailbox.penSamples.empty();
+    state.stopped = stopRequested || mailbox.receiverEnded;
+    return state;
+}
+
+paper_move::ColorSubmitResult submitSettledColor(EPFramebufferFusion *framebuffer,
                          QImage &destination,
                          const QByteArray &latestRgb,
                          QByteArray &colorBuffer,
                          const QRect &requested,
                          bool inverted,
                          const NativePenOverlay &penOverlay,
+                         bool releaseNoteOverlay,
+                         FrameMailbox &mailbox,
+                         const paper_move::ColorSubmitState &expectedState,
                          const QByteArray &previousDigest,
                          const QRect &previousRect,
                          bool suppressDuplicate,
-                         bool &duplicate,
+                         QRect &colorRect,
                          QByteArray &settledDigest,
                          qint64 &submitMilliseconds)
 {
-    duplicate = false;
+    colorRect = QRect();
     settledDigest.clear();
     submitMilliseconds = 0;
-    if (latestRgb.size() < static_cast<qsizetype>(VisibleBytes))
-        return QRect();
+    std::vector<QRect> colorRectangles;
+    auto prepare = [&]() -> paper_move::ColorPreparation {
+        if (latestRgb.size() < static_cast<qsizetype>(VisibleBytes))
+            return paper_move::ColorPreparation::Unavailable;
 
-    const auto *pixels =
-        reinterpret_cast<const unsigned char *>(latestRgb.constData());
-    const std::vector<QRect> colorRectangles =
-        chromaticRectangles(pixels, requested);
-    const QRect colorRect = rectanglesBoundingRect(colorRectangles);
-    if (colorRectangles.empty() || colorRect.isEmpty())
-        return QRect();
+        const auto *pixels =
+            reinterpret_cast<const unsigned char *>(latestRgb.constData());
+        colorRectangles = chromaticRectangles(pixels, requested);
+        colorRect = rectanglesBoundingRect(colorRectangles);
+        if (colorRectangles.empty() || colorRect.isEmpty())
+            return paper_move::ColorPreparation::NoColor;
 
-    QCryptographicHash digest(QCryptographicHash::Sha256);
-    for (const QRect &region : colorRectangles) {
-        const std::array<qint32, 4> geometry = {
-            region.x(), region.y(), region.width(), region.height()};
-        digest.addData(
-            reinterpret_cast<const char *>(geometry.data()),
-            static_cast<qsizetype>(sizeof(geometry)));
-        for (int y = region.top(); y <= region.bottom(); ++y) {
-            const size_t offset =
-                static_cast<size_t>(y) * AndroidStrideBytes +
-                static_cast<size_t>(region.left()) * BytesPerPixel;
+        QCryptographicHash digest(QCryptographicHash::Sha256);
+        for (const QRect &region : colorRectangles) {
+            const std::array<qint32, 4> geometry = {
+                region.x(), region.y(), region.width(), region.height()};
             digest.addData(
-                reinterpret_cast<const char *>(pixels + offset),
-                static_cast<qsizetype>(
-                    region.width() * BytesPerPixel));
+                reinterpret_cast<const char *>(geometry.data()),
+                static_cast<qsizetype>(sizeof(geometry)));
+            for (int y = region.top(); y <= region.bottom(); ++y) {
+                const size_t offset =
+                    static_cast<size_t>(y) * AndroidStrideBytes +
+                    static_cast<size_t>(region.left()) * BytesPerPixel;
+                digest.addData(
+                    reinterpret_cast<const char *>(pixels + offset),
+                    static_cast<qsizetype>(
+                        region.width() * BytesPerPixel));
+            }
         }
-    }
-    settledDigest = digest.result();
-    if (suppressDuplicate &&
-        colorRect == previousRect &&
-        settledDigest == previousDigest) {
-        duplicate = true;
-        return colorRect;
-    }
+        settledDigest = digest.result();
+        if (suppressDuplicate &&
+            colorRect == previousRect &&
+            settledDigest == previousDigest) {
+            return paper_move::ColorPreparation::Duplicate;
+        }
 
-    for (const QRect &region : colorRectangles)
-        convertColorForEink(pixels, colorBuffer, region, inverted);
-    QImage source(
-        reinterpret_cast<const unsigned char *>(colorBuffer.constData()),
-        AndroidWidth,
-        AndroidHeight,
-        AndroidStrideBytes,
-        QImage::Format_RGBX8888);
-    QPainter painter(&destination);
-    painter.setCompositionMode(QPainter::CompositionMode_Source);
-    for (const QRect &region : colorRectangles)
-        painter.drawImage(region.topLeft(), source, region);
-    painter.end();
-    // A completed Note color settle deliberately releases note ownership.
-    // Never paint its stale monochrome FastPen overlay over the RGB frame.
-    if (penOverlay.noteActive && readNoteActive()) {
         for (const QRect &region : colorRectangles)
-            composeNativePenOverlay(penOverlay, destination, region);
-    }
+            convertColorForEink(pixels, colorBuffer, region, inverted);
+        return paper_move::ColorPreparation::Ready;
+    };
+    auto stillCurrent = [&]() {
+        return paper_move::colorSubmitContentStillCurrent(expectedState, [&]() {
+            paper_move::ColorSubmitSnapshot<std::shared_ptr<const QByteArray>> snapshot;
+            snapshot.state = captureColorSubmitState(mailbox, &snapshot.frame);
+            return snapshot;
+        }, [&](const std::shared_ptr<const QByteArray> &currentRgb) {
+            // The receiver owns each copied QByteArray before ACK and never
+            // modifies it after publication. No mailbox lock spans this scan.
+            return currentRgb && latestRgb.size() == static_cast<qsizetype>(VisibleBytes) &&
+                paper_move::colorFrameBytesEqual(
+                    latestRgb.constData(), static_cast<std::size_t>(latestRgb.size()),
+                    currentRgb->constData(), static_cast<std::size_t>(currentRgb->size()));
+        });
+    };
+    auto commit = [&]() {
+        // No scanning, hashing or conversion follows the final input check. Only
+        // copy the prepared regions and submit on the existing panel thread.
+        // Input can still arrive during this short copy-to-first-swap window;
+        // neither the file controls nor EPFramebuffer offer an atomic input fence.
+        QImage source(
+            reinterpret_cast<const unsigned char *>(colorBuffer.constData()),
+            AndroidWidth,
+            AndroidHeight,
+            AndroidStrideBytes,
+            QImage::Format_RGBX8888);
+        QPainter painter(&destination);
+        painter.setCompositionMode(QPainter::CompositionMode_Source);
+        for (const QRect &region : colorRectangles)
+            painter.drawImage(region.topLeft(), source, region);
+        painter.end();
+        // A completed Note color settle deliberately releases note ownership.
+        // Never paint its stale monochrome FastPen overlay over the RGB frame.
+        if (paper_move::composeColorPenOverlay(
+                releaseNoteOverlay, penOverlay.noteActive, expectedState.noteActive)) {
+            for (const QRect &region : colorRectangles)
+                composeNativePenOverlay(penOverlay, destination, region);
+        }
 
-    /*
-     * This is the slow Gallery 3 operation. It runs only after the Android
-     * frame has stopped changing, on the panel worker thread, so SurfaceFlinger
-     * and touch input remain decoupled while sync() waits for the physical
-     * waveform.
-     */
-    const auto started = std::chrono::steady_clock::now();
-    for (const QRect &region : colorRectangles) {
-        framebuffer->swapBuffers(
-            region,
-            EPContentType::Color,
-            EPScreenMode::Content,
-            QFlags<EPFramebuffer::UpdateFlag>(
-                EPFramebuffer::UpdateFlag::UIUpdate));
+        /*
+         * This is the slow Gallery 3 operation. It runs only after the Android
+         * frame has stopped changing, on the panel worker thread, so SurfaceFlinger
+         * and touch input remain decoupled while sync() waits for the physical
+         * waveform.
+         */
+        const auto started = std::chrono::steady_clock::now();
+        for (const QRect &region : colorRectangles) {
+            framebuffer->swapBuffers(
+                region,
+                EPContentType::Color,
+                EPScreenMode::Content,
+                QFlags<EPFramebuffer::UpdateFlag>(
+                    EPFramebuffer::UpdateFlag::UIUpdate));
+        }
+        framebuffer->sync();
+        const auto finished = std::chrono::steady_clock::now();
+        submitMilliseconds =
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                finished - started).count();
+        writeLog(QStringLiteral(
+                     "regional color settle regions=%1 bounds=%2,%3 %4x%5")
+                     .arg(static_cast<qulonglong>(colorRectangles.size()))
+                     .arg(colorRect.x())
+                     .arg(colorRect.y())
+                     .arg(colorRect.width())
+                     .arg(colorRect.height()));
+    };
+    const auto result = paper_move::guardedColorSubmit(prepare, stillCurrent, commit);
+    if (result == paper_move::ColorSubmitResult::Deferred) {
+        colorRect = QRect();
+        settledDigest.clear();
     }
-    framebuffer->sync();
-    const auto finished = std::chrono::steady_clock::now();
-    submitMilliseconds =
-        std::chrono::duration_cast<std::chrono::milliseconds>(
-            finished - started).count();
-    writeLog(QStringLiteral(
-                 "regional color settle regions=%1 bounds=%2,%3 %4x%5")
-                 .arg(static_cast<qulonglong>(colorRectangles.size()))
-                 .arg(colorRect.x())
-                 .arg(colorRect.y())
-                 .arg(colorRect.width())
-                 .arg(colorRect.height()));
-    return colorRect;
+    return result;
 }
 
 bool markDisplayReady()
@@ -2825,6 +3127,10 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
     uint64_t displayedFrames = 0;
     std::shared_ptr<QByteArray> deferredAndroidFrame;
     QByteArray converted;
+    bool conversionValid = false;
+    DisplayProfile convertedProfile = DisplayProfile::Quality;
+    bool convertedInvert = false;
+    TextContrast convertedContrast = TextContrast::Normal;
     QByteArray latestRgb;
     QByteArray colorBuffer;
     bool haveLatestRgb = false;
@@ -3126,15 +3432,22 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
                     accumulatedGhostArea + PanelArea / 2);
             }
         }
+        const bool readerCleanupQuiet =
+            controlNow - lastPanelActivity >=
+                std::chrono::milliseconds(ReaderCleanupIdleMs) &&
+            controlNow - lastReaderPageTurn >=
+                std::chrono::milliseconds(ReaderCleanupIdleMs);
+        const bool readerCleanupOverdue =
+            controlNow - lastReaderPageTurn >=
+                std::chrono::milliseconds(ReaderCleanupMaxWaitMs) &&
+            controlNow - lastPanelActivity >=
+                std::chrono::milliseconds(ReaderCleanupMinGapMs);
         if (!manualRefresh && !frame &&
             !readerPendingCleanup.isEmpty() &&
             penSamples.empty() && !penInRange && !screenOff &&
             !interactiveFastPath && pendingColorSettle.isEmpty() &&
             haveLatestRgb &&
-            controlNow - lastPanelActivity >=
-                std::chrono::milliseconds(ReaderCleanupIdleMs) &&
-            controlNow - lastReaderPageTurn >=
-                std::chrono::milliseconds(ReaderCleanupIdleMs)) {
+            (readerCleanupQuiet || readerCleanupOverdue)) {
             bool handled = false;
             if (ghostPolicy != GhostControlPolicy::Off) {
                 QString detail;
@@ -3402,6 +3715,18 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
 
         const auto colorNow = std::chrono::steady_clock::now();
         const bool noteColorSettle = readNoteActive();
+        /*
+         * While a reader owns the screen, the color settle waits for a real
+         * pause. Its Gallery 3 pass blocks the panel for over a second, and
+         * during comic reading it was firing between page turns - grayscale
+         * scans were misjudged as chromatic - so every few pages cost an
+         * extra 1.2 s stall and pushed the page-refresh policy far past its
+         * count (measured 2026-08-29). Ten seconds of stillness means the
+         * reading stopped; a cover or color page still settles then.
+         */
+        const bool readerColorSettle = readReaderActive();
+        const int colorSettleDelayMs = readerColorSettle
+                ? ReaderColorSettleDelayMs : ColorSettleDelayMs;
         const bool colorIdle =
             activeColorMode != ColorMode::Mono &&
             haveLatestRgb &&
@@ -3410,37 +3735,35 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
             !manualRefresh &&
             penSamples.empty() &&
             !penInRange &&
+            !interactiveFastPath &&
+            colorNow - lastTouchActivity >=
+                std::chrono::milliseconds(TouchSettleDelayMs) &&
+            colorNow - lastTypingActivity >=
+                std::chrono::milliseconds(TouchSettleDelayMs) &&
             (isOneShotColorMode(activeColorMode) ||
              colorNow >= nextAutoColorSettle) &&
             colorNow - lastContentActivity >=
                 std::chrono::milliseconds(
                     isOneShotColorMode(activeColorMode)
-                        ? 0 : ColorSettleDelayMs) &&
+                        ? 0 : colorSettleDelayMs) &&
             colorNow - lastPenActivity >=
-                std::chrono::milliseconds(ColorSettleDelayMs);
+                std::chrono::milliseconds(colorSettleDelayMs);
         if (colorIdle) {
-            if (noteColorSettle) {
-                /*
-                 * Native FastPen is intentionally monochrome so live ink can
-                 * follow the Marker without waiting for Gallery 3.  Once the
-                 * Marker has been out of range for the normal color-idle
-                 * delay, NoteActivity's committed RGB bitmap is authoritative.
-                 * Drop the temporary monochrome overlay before submitting the
-                 * retained RGB regions; otherwise it is composed over the
-                 * colored stroke and makes every Note color look black.
-                 */
-                penOverlay.clear();
-                pendingIdleCleanup = QRect();
-                pendingEraserCleanup = QRect();
-                writeLog(QStringLiteral(
-                    "note idle color settle released native pen overlay"));
-            }
+            auto expectedColorState = captureColorSubmitState(mailbox);
+            // The RGB belongs to the consumed frame, not a newer HWC buffer
+            // which may already have arrived while the control paths ran.
+            expectedColorState.frames = receivedFrames;
+            expectedColorState.penReports = receivedPenReports;
+            expectedColorState.penPresence = consumedPenPresenceGeneration;
+            expectedColorState.colorMode = static_cast<int>(activeColorMode);
+            expectedColorState.inverted = activeInvert;
+            expectedColorState.noteActive = noteColorSettle;
+            expectedColorState.readerActive = readerColorSettle;
             const QRect requestedColor = pendingColorSettle;
-            pendingColorSettle = QRect();
-            bool duplicateColor = false;
+            QRect settled;
             QByteArray settledDigest;
             qint64 colorSubmitMilliseconds = 0;
-            const QRect settled = submitSettledColor(
+            const auto colorResult = submitSettledColor(
                 framebuffer,
                 destination,
                 latestRgb,
@@ -3448,13 +3771,32 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
                 requestedColor,
                 activeInvert,
                 penOverlay,
+                noteColorSettle,
+                mailbox,
+                expectedColorState,
                 lastColorDigest,
                 lastColorRect,
                 activeColorMode == ColorMode::Auto,
-                duplicateColor,
+                settled,
                 settledDigest,
                 colorSubmitMilliseconds);
-            if (!settled.isEmpty() && !duplicateColor) {
+            if (colorResult == paper_move::ColorSubmitResult::Deferred) {
+                // No panel/state side effects occurred. Keep color, ink,
+                // cleanup and any one-shot request for a genuinely idle turn.
+                QCoreApplication::processEvents();
+                continue;
+            }
+            pendingColorSettle = QRect();
+            if (colorResult == paper_move::ColorSubmitResult::Submitted) {
+                if (noteColorSettle) {
+                    // The prepared RGB excluded the temporary monochrome
+                    // overlay. Release it only after an accepted submission.
+                    penOverlay.clear();
+                    pendingIdleCleanup = QRect();
+                    pendingEraserCleanup = QRect();
+                    writeLog(QStringLiteral(
+                        "note idle color settle released native pen overlay"));
+                }
                 lastPanelActivity = std::chrono::steady_clock::now();
                 accumulatedGhostArea = 0;
                 nextAndroidSubmit = lastPanelActivity;
@@ -3488,7 +3830,7 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
                                             nextAutoColorSettle -
                                             lastPanelActivity).count()
                                       : 0));
-            } else if (duplicateColor) {
+            } else if (colorResult == paper_move::ColorSubmitResult::Duplicate) {
                 writeLog(QStringLiteral(
                              "idle color settle skipped: unchanged "
                              "color=%1,%2 %3x%4")
@@ -3505,16 +3847,31 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
                              .arg(requestedColor.width())
                              .arg(requestedColor.height()));
             }
+            // sync may have waited while the owner changed the mode, even
+            // rewriting the same one-shot value. Never consume that newer
+            // request. File-check-to-write is not an atomic cross-process CAS.
             if (isOneShotColorMode(activeColorMode)) {
-                const ColorMode resumedMode =
-                    activeColorMode == ColorMode::OnceAuto
-                        ? ColorMode::Auto
-                        : ColorMode::Mono;
-                if (!writeColorMode(resumedMode)) {
-                    writeLog(QStringLiteral(
-                        "manual color settle could not reset control"));
+                const ColorMode currentColorMode = readColorMode();
+                if (paper_move::sameColorControlRequest(
+                        expectedColorState.colorMode, expectedColorState.controls[0],
+                        static_cast<int>(currentColorMode), colorControlStamp(ColorModePath))) {
+                    const ColorMode resumedMode =
+                        activeColorMode == ColorMode::OnceAuto
+                            ? ColorMode::Auto
+                            : ColorMode::Mono;
+                    if (!writeColorMode(resumedMode)) {
+                        pendingColorSettle = requestedColor;
+                        writeLog(QStringLiteral(
+                            "manual color settle could not reset control"));
+                    } else {
+                        activeColorMode = resumedMode;
+                    }
+                } else if (isOneShotColorMode(currentColorMode)) {
+                    // A same-value new request is invisible to the ordinary
+                    // enum-change detector. Retain it explicitly for the next
+                    // loop, which also receives any newly arrived RGB frame.
+                    pendingColorSettle = destination.rect();
                 }
-                activeColorMode = resumedMode;
             }
             QCoreApplication::processEvents();
             continue;
@@ -3782,6 +4139,12 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
             }
         }
 
+        const auto preparationStarted = std::chrono::steady_clock::now();
+        qint64 rgbScanMicroseconds = 0;
+        qint64 conversionMicroseconds = 0;
+        qint64 outputDiffMicroseconds = 0;
+        size_t convertedPixels = 0;
+        bool fullConversion = false;
         QRect dirty = destination.rect();
         std::vector<QRect> dirtyRectangles = {destination.rect()};
         if (frame) {
@@ -3821,8 +4184,13 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
             const auto *androidPixels =
                 reinterpret_cast<const unsigned char *>(
                 frame->constData());
-            const QRect rgbDirty = changedRectangle(
+            const auto rgbScanStarted = std::chrono::steady_clock::now();
+            const std::vector<QRect> rgbDamage = changedRectangles(
                 androidPixels, latestRgb, !haveLatestRgb);
+            const QRect rgbDirty = rectanglesBoundingRect(rgbDamage);
+            rgbScanMicroseconds = std::chrono::duration_cast<
+                std::chrono::microseconds>(
+                std::chrono::steady_clock::now() - rgbScanStarted).count();
             latestRgb = *frame;
             haveLatestRgb = true;
             if (activeColorMode != ColorMode::Mono &&
@@ -3846,13 +4214,37 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
                 lastContentActivity =
                     std::chrono::steady_clock::now();
             }
-            convertForEink(
-                androidPixels, converted, activeInvert, activeProfile);
+            const auto conversionStarted = std::chrono::steady_clock::now();
+            fullConversion = !conversionValid || !havePrevious || manualRefresh ||
+                converted.size() != static_cast<qsizetype>(VisibleBytes) ||
+                convertedProfile != activeProfile ||
+                convertedInvert != activeInvert ||
+                convertedContrast != textContrast ||
+                ::access(FullConversionPath, F_OK) == 0;
+            if (fullConversion) {
+                convertForEink(
+                    androidPixels, converted, activeInvert, activeProfile);
+                convertedPixels = static_cast<size_t>(AndroidWidth) * AndroidHeight;
+            } else {
+                convertedPixels = convertForEinkRegions(
+                    androidPixels, converted, activeInvert, activeProfile, rgbDamage);
+            }
+            conversionValid = true;
+            convertedProfile = activeProfile;
+            convertedInvert = activeInvert;
+            convertedContrast = textContrast;
+            conversionMicroseconds = std::chrono::duration_cast<
+                std::chrono::microseconds>(
+                std::chrono::steady_clock::now() - conversionStarted).count();
             const auto *pixels =
                 reinterpret_cast<const unsigned char *>(
                     converted.constData());
+            const auto outputDiffStarted = std::chrono::steady_clock::now();
             dirtyRectangles = changedRectangles(
                 pixels, previous, !havePrevious);
+            outputDiffMicroseconds = std::chrono::duration_cast<
+                std::chrono::microseconds>(
+                std::chrono::steady_clock::now() - outputDiffStarted).count();
             dirty = rectanglesBoundingRect(dirtyRectangles);
             const QRect navigationRect(
                 0, AndroidHeight - NavigationBarHeight,
@@ -3923,7 +4315,16 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
                 dirty = destination.rect();
                 dirtyRectangles = {dirty};
             }
-            std::memcpy(previous.data(), pixels, VisibleBytes);
+            // Keep the exact previous output without copying unchanged pixels.
+            // Added toolbar/navigation damage is a safe superset of true diff.
+            for (const QRect &damage : dirtyRectangles) {
+                for (int y = damage.top(); y <= damage.bottom(); ++y) {
+                    const size_t offset = static_cast<size_t>(y) * AndroidStrideBytes +
+                        static_cast<size_t>(damage.left()) * BytesPerPixel;
+                    std::memcpy(previous.data() + offset, pixels + offset,
+                                static_cast<size_t>(damage.width()) * BytesPerPixel);
+                }
+            }
             havePrevious = true;
         }
         ++displayedFrames;
@@ -4093,12 +4494,15 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
                 break;
             }
         }
-        if (displayedFrames <= 8 || displayedFrames % 20 == 0) {
+        if (displayedFrames <= 8 || displayedFrames % 20 == 0 ||
+            readFrameTrace()) {
             writeLog(QStringLiteral(
                           "coalesced frame received=%1 displayed=%2 "
                            "dirty=%3,%4 %5x%6 regions=%7 full=%8 manual=%9 "
                            "pen_regions=%10 profile=%11 sync=%12 "
-                           "submit_ms=%13 auto_ghost=%14")
+                           "submit_ms=%13 auto_ghost=%14 "
+                           "rgb_scan_us=%15 convert_us=%16 diff_us=%17 "
+                           "converted_pixels=%18 full_convert=%19 pipeline_us=%20")
                          .arg(receivedFrames)
                          .arg(displayedFrames)
                          .arg(dirty.x())
@@ -4112,7 +4516,15 @@ int runDecoupledDisplay(EPFramebufferFusion *framebuffer,
                           .arg(displayProfileName(activeProfile))
                           .arg(waitForPanel)
                           .arg(submitMilliseconds)
-                          .arg(automaticGhostRefresh));
+                          .arg(automaticGhostRefresh)
+                          .arg(rgbScanMicroseconds)
+                          .arg(conversionMicroseconds)
+                          .arg(outputDiffMicroseconds)
+                          .arg(static_cast<qulonglong>(convertedPixels))
+                          .arg(fullConversion)
+                          .arg(std::chrono::duration_cast<std::chrono::microseconds>(
+                              std::chrono::steady_clock::now() - preparationStarted)
+                              .count()));
         }
     }
 

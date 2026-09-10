@@ -27,6 +27,7 @@ public final class InstalledApps {
     public static final String PACKAGE_LIBBY =
             "com.overdrive.mobile.android.libby";
     public static final String PACKAGE_KOBO = "com.kobobooks.android";
+    public static final String PACKAGE_RE_VIEWER = "com.foldcomic.reader";
     public static final String PACKAGE_EVERNOTE = "com.evernote";
     public static final String PACKAGE_ONENOTE =
             "com.microsoft.office.onenote";
@@ -75,8 +76,14 @@ public final class InstalledApps {
                     (application.flags & ApplicationInfo.FLAG_SYSTEM) == 0 ||
                     (application.flags &
                             ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+            // The system-app filter hides AOSP's own entries, but it also hid
+            // the bundled comic reader on every tablet - installed, listed by
+            // the package manager, visible nowhere (reported with a photo,
+            // 2026-08-28). Ship-with apps people are meant to open are named
+            // here, the same way the Play Store already was.
             if (!userInstalled &&
-                    !PACKAGE_PLAY_STORE.equals(packageName)) {
+                    !PACKAGE_PLAY_STORE.equals(packageName) &&
+                    !PACKAGE_RE_VIEWER.equals(packageName)) {
                 continue;
             }
             if (!includeRidi && PACKAGE_RIDI.equals(packageName)) {
@@ -138,6 +145,9 @@ public final class InstalledApps {
                     || PACKAGE_KOBO.equals(packageName)) {
                 return 3;
             }
+            if (PACKAGE_RE_VIEWER.equals(packageName)) {
+                return 4;
+            }
             if (PACKAGE_PLAY_STORE.equals(packageName)) {
                 return 8;
             }
@@ -161,6 +171,9 @@ public final class InstalledApps {
         if (PACKAGE_ONENOTE.equals(packageName)) {
             return 4;
         }
+        if (PACKAGE_RE_VIEWER.equals(packageName)) {
+            return 5;
+        }
         if (PACKAGE_PLAY_STORE.equals(packageName)) {
             return 8;
         }
@@ -182,6 +195,9 @@ public final class InstalledApps {
         }
         if (PACKAGE_AURORA.equals(packageName)) {
             return context.getString(R.string.app_detail_aurora);
+        }
+        if (PACKAGE_RE_VIEWER.equals(packageName)) {
+            return context.getString(R.string.app_detail_re_viewer);
         }
         return context.getString(R.string.app_detail_installed);
     }

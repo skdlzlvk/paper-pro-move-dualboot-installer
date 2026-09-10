@@ -23,6 +23,15 @@
     <string name="update_ready_detail">版本 %1$s 已暂存。</string>
     <string name="update_staged_detail">版本 %1$s 已通过签名、大小和 SHA-256 检查。暂存位置：%2$s</string>
     <string name="update_waiting_applier">需要离线安装器</string>
+    <string name="update_apply_arm">下次启动 Android 时应用</string>
+    <string name="update_armed_title">更新已排定</string>
+    <string name="update_armed_detail">下次从原生系统启动 Android 时将验证并应用版本 %1$s。请从主屏菜单进入 Stock OS，然后再次启动 Android。</string>
+    <string name="update_apply_cancel">取消排定的更新</string>
+    <string name="update_applied_title">更新已完成</string>
+    <string name="update_applied_detail">%1$s</string>
+    <string name="update_apply_failed_title">更新被拒绝</string>
+    <string name="update_apply_failed_detail">没有任何更改。%1$s</string>
+    <string name="update_acknowledge">确定</string>
     <string name="update_battery_title">请充电后下载</string>
     <string name="update_battery_detail">当前电量为 %1$d%%；此版本要求 %2$d%%。</string>
     <string name="update_failed_title">更新已拒绝</string>

@@ -35,6 +35,8 @@ import java.util.Set;
 /** Verifies and stages project Android updates without touching a partition. */
 final class OtaUpdateClient {
     static final int UPDATER_VERSION = 1;
+    private static final String MODEL_CHIAPPA = "reMarkable Chiappa";
+    private static final String MODEL_FERRARI = "reMarkable Ferrari";
     private static final int MAX_ENVELOPE_BYTES = 128 * 1024;
     private static final int MAX_REDIRECTS = 3;
     private static final int MAX_ARTIFACTS = 4;
@@ -171,10 +173,26 @@ final class OtaUpdateClient {
 
         String payloadText = new String(payloadBytes, StandardCharsets.UTF_8);
         JSONObject payload = new JSONObject(payloadText);
-        requireExactKeys(payload, "payloadVersion", "releaseId", "channel",
-                "createdAt", "expiresAt", "installable",
-                "minimumUpdaterVersion", "device", "android", "target",
-                "artifacts");
+        // Two payload shapes exist. A differential update-stage payload has no
+        // target block - the on-device scripts resolve slots and partitions
+        // themselves, and the stock-side applier requires the battery floor
+        // and artifact size to each appear exactly once - while the original
+        // full-image shape keeps its per-device target facts. The shape is
+        // decided here, exactly once, and everything below follows it.
+        boolean updateStage = payload.has("minimumBatteryPercent");
+        require(updateStage != payload.has("target"),
+                "payload shape is ambiguous");
+        if (updateStage) {
+            requireExactKeys(payload, "payloadVersion", "releaseId",
+                    "channel", "createdAt", "expiresAt", "installable",
+                    "minimumUpdaterVersion", "minimumBatteryPercent",
+                    "device", "android", "artifacts");
+        } else {
+            requireExactKeys(payload, "payloadVersion", "releaseId",
+                    "channel", "createdAt", "expiresAt", "installable",
+                    "minimumUpdaterVersion", "device", "android", "target",
+                    "artifacts");
+        }
         require(payload.getInt("payloadVersion") == 1,
                 "unsupported payload version");
         require(payload.getBoolean("installable"),
@@ -194,11 +212,12 @@ final class OtaUpdateClient {
         JSONObject device = payload.getJSONObject("device");
         requireExactKeys(device, "deviceTreeModel",
                 "supportedStockVersions");
-        require("reMarkable Chiappa".equals(
-                        device.getString("deviceTreeModel")),
+        String payloadModel = device.getString("deviceTreeModel");
+        require(MODEL_CHIAPPA.equals(payloadModel)
+                        || MODEL_FERRARI.equals(payloadModel),
+                "manifest targets an unknown device");
+        require(payloadModel.equals(configuration.physicalModel),
                 "manifest targets a different device");
-        require("reMarkable Chiappa".equals(configuration.physicalModel),
-                "physical device is not Paper Pro Move");
         JSONArray supportedStockVersions =
                 device.getJSONArray("supportedStockVersions");
         boolean stockAccepted = false;
@@ -222,16 +241,27 @@ final class OtaUpdateClient {
         require(!configuration.currentReleaseId.equals(toReleaseId),
                 "release is already installed");
 
-        JSONObject target = payload.getJSONObject("target");
-        requireExactKeys(target, "stockSlot", "androidSlot", "partition",
-                "sizeBytes", "minimumBatteryPercent");
-        require("a".equals(target.getString("stockSlot"))
-                        && "b".equals(target.getString("androidSlot"))
-                        && "/dev/mmcblk0p3".equals(
-                                target.getString("partition"))
-                        && target.getLong("sizeBytes") == 4294967296L,
-                "unsafe slot or partition target");
-        int minimumBattery = target.getInt("minimumBatteryPercent");
+        int minimumBattery;
+        if (updateStage) {
+            minimumBattery = payload.getInt("minimumBatteryPercent");
+        } else {
+            // Stock runs from root A on a Move and from root B on a Paper
+            // Pro, so the free Android slot and its partition are mirror
+            // images of each other. The target must state the facts for the
+            // tablet this payload already proved it is for.
+            JSONObject target = payload.getJSONObject("target");
+            requireExactKeys(target, "stockSlot", "androidSlot", "partition",
+                    "sizeBytes", "minimumBatteryPercent");
+            boolean move = MODEL_CHIAPPA.equals(payloadModel);
+            require((move ? "a" : "b").equals(target.getString("stockSlot"))
+                            && (move ? "b" : "a").equals(
+                                    target.getString("androidSlot"))
+                            && (move ? "/dev/mmcblk0p3" : "/dev/mmcblk0p2")
+                                    .equals(target.getString("partition"))
+                            && target.getLong("sizeBytes") == 4294967296L,
+                    "unsafe slot or partition target");
+            minimumBattery = target.getInt("minimumBatteryPercent");
+        }
         require(minimumBattery >= 60 && minimumBattery <= 100,
                 "unsafe battery threshold");
 
@@ -239,6 +269,8 @@ final class OtaUpdateClient {
         require(artifactJson.length() > 0
                         && artifactJson.length() <= MAX_ARTIFACTS,
                 "invalid artifact count");
+        require(!updateStage || artifactJson.length() == 1,
+                "an update stage ships as exactly one artifact");
         List<Artifact> artifacts = new ArrayList<>();
         Set<String> names = new HashSet<>();
         long total = 0L;
@@ -252,10 +284,15 @@ final class OtaUpdateClient {
                     "unsafe artifact name");
             require(names.add(name), "duplicate artifact name");
             String purpose = item.getString("purpose");
-            require("android-root-image".equals(purpose)
-                            || "paper-home-apk".equals(purpose)
-                            || "host-integration".equals(purpose),
-                    "unsupported artifact purpose");
+            if (updateStage) {
+                require("update-stage".equals(purpose),
+                        "unsupported artifact purpose");
+            } else {
+                require("android-root-image".equals(purpose)
+                                || "paper-home-apk".equals(purpose)
+                                || "host-integration".equals(purpose),
+                        "unsupported artifact purpose");
+            }
             long size = item.getLong("sizeBytes");
             require(size > 0 && size <= MAX_TOTAL_BYTES,
                     "invalid artifact size");
@@ -277,11 +314,42 @@ final class OtaUpdateClient {
                 artifacts, envelopeText, payloadText);
     }
 
+    static File stagingRoot(Context context) {
+        return new File(context.getFilesDir(), "ota-staging");
+    }
+
+    /**
+     * Asks the stock side to apply the staged update on the next Android
+     * start. The marker is consumed by the applier whatever the outcome, so
+     * a failed apply waits for the owner to ask again rather than retrying
+     * at every boot.
+     */
+    static void requestApply(Context context) throws IOException {
+        File root = stagingRoot(context);
+        require(new File(root, "current-ready").isFile(),
+                "no staged update is ready");
+        writeAtomic(root, "apply-request",
+                "1\n".getBytes(StandardCharsets.US_ASCII));
+    }
+
+    static void cancelApply(Context context) {
+        File request = new File(stagingRoot(context), "apply-request");
+        if (request.isFile() && !request.delete()) {
+            android.util.Log.w("PaperOta",
+                    "could not cancel the apply request");
+        }
+    }
+
     static File stage(Context context, Release release,
             Progress progress) throws Exception {
         verifyStagingFilesystem(context);
-        File root = new File(context.getFilesDir(), "ota-staging");
+        File root = stagingRoot(context);
         requireDirectory(root);
+        // A new staging supersedes whatever the last cycle left behind: an
+        // unacknowledged result must not be read as this release's, and a
+        // pending request must not apply half-superseded bytes.
+        new File(root, "apply-request").delete();
+        new File(root, "apply-result").delete();
         File temporary = new File(root, release.releaseId + ".downloading");
         deleteTree(temporary);
         requireDirectory(temporary);

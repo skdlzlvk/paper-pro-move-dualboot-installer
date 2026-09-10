@@ -23,6 +23,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
@@ -89,7 +90,19 @@ public final class DisplayControlService extends Service {
      * the old launcher-owned TYPE_NAVIGATION_BAR window on top of applications.
      */
     private static final boolean USE_SYSTEMUI_NAVIGATION_BAR = true;
+    /*
+     * Retiring that bar also retired, silently, the only two gestures that
+     * opened the display menu - its long press and its chevron. Every build
+     * since shipped the menu unreachable by touch, the home screen promised a
+     * "screen menu on the home button" that nothing implemented, and a Paper
+     * Pro owner's photo finally proved it (2026-08-28). This intent is the
+     * replacement: the home screen's Screen tile and the reading-light shade
+     * both start the service with it, and it is the menu's only way in.
+     */
+    public static final String ACTION_SHOW_MENU =
+            "com.android.launcher3.paper.action.SHOW_MENU";
     private static final String PROFILE_FILE = "paper-display-mode";
+    private static final String UI_SIZE_FILE = "paper-ui-size";
     private static final String QUALITY_PROFILE_MIGRATION_FILE =
             "paper-quality-profile-v1";
     private static final String COLOR_FILE = "paper-color-mode";
@@ -100,6 +113,15 @@ public final class DisplayControlService extends Service {
     private static final String FRONTLIGHT_FILE = "paper-frontlight-level";
     private static final String SCREEN_STATE_FILE = "paper-screen-state";
     private static final String LOCK_STYLE_FILE = "paper-lock-style";
+    /**
+     * USB drive mode. The request file is read by paper-mtp-watch, which is
+     * root and can edit the USB gadget; the state file is what that side writes
+     * back. It is deliberately not switched on at boot - see the header of
+     * paper-mtp-watch.sh - so this menu row is the only way it ever happens.
+     */
+    private static final String MTP_REQUEST_FILE = "paper-mtp-request";
+    private static final String MTP_STATE_FILE = "paper-mtp-state";
+
     /** Reader page-refresh policy consumed by the native display bridge. */
     private static final String READER_REFRESH_FILE = "paper-reader-refresh";
     /** Ghost-removal method consumed by the native display bridge. */
@@ -284,6 +306,9 @@ public final class DisplayControlService extends Service {
         ensureFrontlightGesture();
         if (!USE_SYSTEMUI_NAVIGATION_BAR) {
             ensureBubble();
+        }
+        if (intent != null && ACTION_SHOW_MENU.equals(intent.getAction())) {
+            handler.post(this::toggleMenu);
         }
         return START_STICKY;
     }
@@ -552,7 +577,7 @@ public final class DisplayControlService extends Service {
         }
         menu = createMenu();
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                dp(196),
+                dp(252),
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
@@ -584,6 +609,15 @@ public final class DisplayControlService extends Service {
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setPadding(dp(5), dp(5), dp(5), dp(5));
         panel.setBackgroundColor(Color.WHITE);
+        // Now that the menu can actually be opened, its first viewer reported
+        // rows running together and labels wrapping past two lines. A hairline
+        // between rows and the wider panel below fix both (2026-08-28).
+        android.graphics.drawable.GradientDrawable divider =
+                new android.graphics.drawable.GradientDrawable();
+        divider.setSize(0, dp(1));
+        divider.setColor(Color.rgb(206, 206, 200));
+        panel.setDividerDrawable(divider);
+        panel.setShowDividers(LinearLayout.SHOW_DIVIDER_MIDDLE);
 
         TextView title = menuRow(
                 getString(
@@ -591,17 +625,18 @@ public final class DisplayControlService extends Service {
                         profileLabel(),
                         colorModeLabel()),
                 true);
+        // The refresh profiles are the one group of rows that never said which
+        // of them was in force. The title carries it, but a reader who opened
+        // this menu to find out reported having no idea which mode was active
+        // (reader feedback, 2026-08-26). Every other row that holds a value
+        // states it inline, so these do too, and the three stay directly
+        // selectable rather than becoming one row that has to be cycled.
         panel.addView(title);
         panel.addView(menuRow(getString(R.string.display_full_refresh), false,
                 this::requestRefresh));
-        panel.addView(menuRow(getString(R.string.display_fast_mode), false,
-                () -> selectProfile("fast")));
-        panel.addView(menuRow(
-                getString(R.string.display_balanced_mode), false,
-                () -> selectProfile("balanced")));
-        panel.addView(menuRow(
-                getString(R.string.display_quality_mode), false,
-                () -> selectProfile("quality")));
+        panel.addView(profileRow(R.string.display_fast_mode, "fast"));
+        panel.addView(profileRow(R.string.display_balanced_mode, "balanced"));
+        panel.addView(profileRow(R.string.display_quality_mode, "quality"));
         panel.addView(menuRow(
                 "auto".equals(readControl(COLOR_FILE, "auto"))
                         ? getString(R.string.display_disable_auto_color)
@@ -610,6 +645,7 @@ public final class DisplayControlService extends Service {
                 this::toggleAutomaticColor));
         panel.addView(menuRow(getString(R.string.display_settle_color), false,
                 this::settleColorNow));
+        panel.addView(usbDriveRow());
         panel.addView(menuRow(
                 getString(R.string.display_reader_refresh_row,
                         readerRefreshLabel()),
@@ -625,6 +661,10 @@ public final class DisplayControlService extends Service {
                         textContrastLabel()),
                 false,
                 this::cycleTextContrast));
+        panel.addView(menuRow(
+                getString(R.string.display_ui_size_row, uiSizeLabel()),
+                false,
+                this::cycleUiSize));
         panel.addView(menuRow(getString(R.string.display_light_brighter), false,
                 () -> adjustFrontlight(FRONTLIGHT_STEP)));
         panel.addView(menuRow(getString(R.string.display_light_dimmer), false,
@@ -679,6 +719,41 @@ public final class DisplayControlService extends Service {
             row.setOnClickListener(view -> action.run());
         }
         return row;
+    }
+
+    /**
+     * The USB drive row. Tapping it asks the root side to add MTP to the USB
+     * gadget, or to take it off again; the row says which of the two a tap will
+     * do, because there is nothing else on the tablet that shows it.
+     */
+    private TextView usbDriveRow() {
+        boolean on = "on".equals(readControl(MTP_STATE_FILE, "off"));
+        return menuRow(
+                getString(on ? R.string.display_usb_drive_on : R.string.display_usb_drive_off),
+                false,
+                () -> toggleUsbDrive(on));
+    }
+
+    private void toggleUsbDrive(boolean on) {
+        String wanted = on ? "off" : "on";
+        if (writeControl(MTP_REQUEST_FILE, wanted)) {
+            Toast.makeText(
+                    this,
+                    getString(on
+                            ? R.string.display_usb_drive_stopping
+                            : R.string.display_usb_drive_starting),
+                    Toast.LENGTH_SHORT).show();
+        }
+        hideMenu();
+    }
+
+    /** One refresh-profile row, marked when it is the profile in force. */
+    private TextView profileRow(int labelId, final String value) {
+        String label = getString(labelId);
+        if (value.equals(readControl(PROFILE_FILE, "quality"))) {
+            label = getString(R.string.display_mode_active, label);
+        }
+        return menuRow(label, false, () -> selectProfile(value));
     }
 
     private void selectProfile(String value) {
@@ -766,6 +841,44 @@ public final class DisplayControlService extends Service {
                 Settings.System.SCREEN_BRIGHTNESS,
                 153);
         return Math.max(0, Math.min(255, value));
+    }
+
+    /**
+     * Whether the panel is currently turned to landscape.
+     *
+     * Automatic rotation is never the answer here: this tablet has no
+     * accelerometer exposed to Android, so leaving it on would only mean the
+     * rotation never changes. The owner picks, and the choice persists.
+     */
+    private boolean landscapeRotationSelected() {
+        int rotation = Settings.System.getInt(
+                getContentResolver(), Settings.System.USER_ROTATION,
+                Surface.ROTATION_0);
+        return rotation == Surface.ROTATION_90
+                || rotation == Surface.ROTATION_270;
+    }
+
+    private void toggleScreenRotation() {
+        boolean landscape = !landscapeRotationSelected();
+        try {
+            /*
+             * Pin the rotation before setting it. With ACCELEROMETER_ROTATION
+             * left on, the window manager owns the rotation and would put a
+             * user choice straight back.
+             */
+            Settings.System.putInt(getContentResolver(),
+                    Settings.System.ACCELEROMETER_ROTATION, 0);
+            if (!Settings.System.putInt(getContentResolver(),
+                    Settings.System.USER_ROTATION,
+                    landscape ? Surface.ROTATION_90 : Surface.ROTATION_0)) {
+                throw new IllegalStateException(
+                        "USER_ROTATION write returned false");
+            }
+            Log.i(TAG, "display rotation set to "
+                    + (landscape ? "landscape" : "portrait"));
+        } catch (Exception failure) {
+            Log.w(TAG, "could not change display rotation", failure);
+        }
     }
 
     private boolean automaticFrontlightEnabled() {
@@ -1143,6 +1256,101 @@ public final class DisplayControlService extends Service {
         hideMenu();
     }
 
+    private String uiSizeLabel() {
+        switch (readControl(UI_SIZE_FILE, "default")) {
+            case "large":
+                return getString(R.string.ui_size_large);
+            case "larger":
+                return getString(R.string.ui_size_larger);
+            default:
+                return getString(R.string.ui_size_default);
+        }
+    }
+
+    /*
+     * "Too small" was the Paper Pro's first outside report: the panel runs at
+     * its native 1620x2160 but Android was told 229 dpi, so every control is
+     * drawn small and nothing offered to change it. The panel resolution is
+     * the bridge's business and never moves; what this changes is only the
+     * density Android lays the UI out with, which is exactly what `adb shell
+     * wm density` changes.
+     */
+    private void cycleUiSize() {
+        String current = readControl(UI_SIZE_FILE, "default");
+        String next;
+        if ("default".equals(current)) {
+            next = "large";
+        } else if ("large".equals(current)) {
+            next = "larger";
+        } else {
+            next = "default";
+        }
+        if (applyUiSize(next) && writeControl(UI_SIZE_FILE, next)) {
+            Toast.makeText(
+                    this,
+                    getString(R.string.display_ui_size_row, uiSizeLabel()),
+                    Toast.LENGTH_SHORT).show();
+        }
+        hideMenu();
+    }
+
+    private int forcedDensityFor(String size) {
+        // Panel width identifies the tablet from inside the container: the
+        // Paper Pro is 1620 across at 229 dpi native, the Move 954 at 264.
+        int width = getResources().getDisplayMetrics().widthPixels;
+        boolean large = "large".equals(size);
+        if (width >= 1400) {
+            return large ? 264 : 300;
+        }
+        return large ? 300 : 340;
+    }
+
+    private boolean applyUiSize(String size) {
+        int density = "default".equals(size) ? 0 : forcedDensityFor(size);
+        int userId = android.os.Process.myUserHandle().hashCode();
+        try {
+            // WindowManagerService applies a forced density immediately and
+            // persists it itself, and the permission its binder call checks is
+            // WRITE_SECURE_SETTINGS, which this launcher already holds for the
+            // navigation service. The accessor is a hidden API, so the plain
+            // settings write below stays as the fallback.
+            Object windowManager = Class
+                    .forName("android.view.WindowManagerGlobal")
+                    .getMethod("getWindowManagerService")
+                    .invoke(null);
+            if (density > 0) {
+                windowManager.getClass()
+                        .getMethod("setForcedDisplayDensityForUser",
+                                int.class, int.class, int.class)
+                        .invoke(windowManager, 0, density, userId);
+            } else {
+                windowManager.getClass()
+                        .getMethod("clearForcedDisplayDensityForUser",
+                                int.class, int.class)
+                        .invoke(windowManager, 0, userId);
+            }
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException error) {
+            Log.w(TAG, "live density change unavailable; writing the setting", error);
+        }
+        try {
+            Settings.Secure.putString(
+                    getContentResolver(),
+                    "display_density_forced",
+                    density > 0 ? String.valueOf(density) : "");
+            Toast.makeText(this,
+                    getString(R.string.ui_size_restart_hint),
+                    Toast.LENGTH_LONG).show();
+            return true;
+        } catch (RuntimeException error) {
+            Log.e(TAG, "cannot change UI density", error);
+            Toast.makeText(this,
+                    getString(R.string.display_command_failed),
+                    Toast.LENGTH_SHORT).show();
+            return false;
+        }
+    }
+
     private String profileLabel() {
         return profileLabelFor(readControl(PROFILE_FILE, "quality"));
     }
@@ -1280,7 +1488,9 @@ public final class DisplayControlService extends Service {
     private final class FrontlightShadeView extends View {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final RectF slider = new RectF();
+        private final RectF rotateButton = new RectF();
         private final RectF automaticButton = new RectF();
+        private final RectF screenButton = new RectF();
         private final RectF closeButton = new RectF();
         private boolean sliderDragging;
         private int brightness = requestedFrontlightBrightness();
@@ -1344,20 +1554,73 @@ public final class DisplayControlService extends Service {
                 canvas.drawLine(x, slider.top, x, slider.bottom, paint);
             }
 
-            automaticButton.set(dp(28), dp(154),
-                    width / 2f - dp(8), dp(208));
-            closeButton.set(width / 2f + dp(8), dp(154),
+            /*
+             * Three cells now, because this panel is where the tablet's
+             * display settings live and rotation belongs with them. The
+             * screen is 11.8 inches; landscape is what makes it good for
+             * comics and two-page scans, and there was no way to ask for it.
+             * Rotation is drawn rather than labelled: a glyph needs no string
+             * in three languages, and the shape says it.
+             */
+            float rotateWidth = dp(72);
+            rotateButton.set(dp(28), dp(154), dp(28) + rotateWidth, dp(208));
+            // Four cells: the Screen cell is the display menu's way in from
+            // inside any app - this shade already opens above everything, and
+            // the menu's previous entries died with the launcher-owned
+            // navigation bar (2026-08-28).
+            float remaining = width - dp(28) - (dp(28) + rotateWidth) - dp(16);
+            automaticButton.set(rotateButton.right + dp(8), dp(154),
+                    rotateButton.right + dp(8) + remaining / 3f, dp(208));
+            screenButton.set(automaticButton.right + dp(8), dp(154),
+                    automaticButton.right + dp(8) + remaining / 3f, dp(208));
+            closeButton.set(screenButton.right + dp(8), dp(154),
                     width - dp(28), dp(208));
             paint.setStyle(Paint.Style.STROKE);
+            canvas.drawRect(rotateButton, paint);
             canvas.drawRect(automaticButton, paint);
+            canvas.drawRect(screenButton, paint);
             canvas.drawRect(closeButton, paint);
+            drawRotateGlyph(canvas, rotateButton);
             text(canvas,
                     automaticFrontlightEnabled()
                             ? getString(R.string.frontlight_panel_auto)
                             : getString(R.string.frontlight_panel_manual),
                     automaticButton.left + dp(16), dp(188), 18f, true);
+            text(canvas, getString(R.string.frontlight_panel_screen),
+                    screenButton.left + dp(16), dp(188), 18f, true);
             text(canvas, getString(R.string.frontlight_panel_close),
                     closeButton.left + dp(16), dp(188), 18f, true);
+        }
+
+        /*
+         * A page outline with a turn arrow: portrait when the tablet is
+         * portrait, landscape when it is landscape, so the glyph shows the
+         * state as well as the action. Stroked shapes only - E Ink renders
+         * these cleanly and there is no asset to ship or scale.
+         */
+        private void drawRotateGlyph(Canvas canvas, RectF cell) {
+            boolean landscape = landscapeRotationSelected();
+            float centerX = cell.centerX();
+            float centerY = cell.centerY();
+            float halfLong = dp(13);
+            float halfShort = dp(9);
+            float halfWidth = landscape ? halfLong : halfShort;
+            float halfHeight = landscape ? halfShort : halfLong;
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(2));
+            paint.setColor(Color.BLACK);
+            canvas.drawRect(centerX - halfWidth, centerY - halfHeight,
+                    centerX + halfWidth, centerY + halfHeight, paint);
+            /* The turn arrow, above the page and pointing the way it will go. */
+            float arrowY = centerY - halfHeight - dp(7);
+            float arrowHalf = dp(10);
+            canvas.drawLine(centerX - arrowHalf, arrowY,
+                    centerX + arrowHalf, arrowY, paint);
+            canvas.drawLine(centerX + arrowHalf, arrowY,
+                    centerX + arrowHalf - dp(5), arrowY - dp(4), paint);
+            canvas.drawLine(centerX + arrowHalf, arrowY,
+                    centerX + arrowHalf - dp(5), arrowY + dp(4), paint);
+            paint.setStrokeWidth(dp(1));
         }
 
         private void updateSlider(float x) {
@@ -1425,10 +1688,22 @@ public final class DisplayControlService extends Service {
                 return true;
             }
             if (action == MotionEvent.ACTION_UP &&
+                    rotateButton.contains(x, y)) {
+                toggleScreenRotation();
+                requestVisiblePanelRefresh(true);
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP &&
                     automaticButton.contains(x, y)) {
                 toggleAutomaticFrontlight();
                 brightness = requestedFrontlightBrightness();
                 requestVisiblePanelRefresh(true);
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP &&
+                    screenButton.contains(x, y)) {
+                hideFrontlightShade();
+                toggleMenu();
                 return true;
             }
             if (action == MotionEvent.ACTION_UP &&
@@ -1493,6 +1768,33 @@ public final class DisplayControlService extends Service {
             canvas.drawText(getString(R.string.fixed_nav_refresh),
                     third * 2.5f, baseline, paint);
             paint.setTextAlign(Paint.Align.LEFT);
+
+            /*
+             * A visible way into the display menu. It used to open only on a
+             * 650 ms press of this section and nothing said so, and two
+             * testers in a row reported that they could not find it. The
+             * chevron is the same shape this view already draws when the bar
+             * is collapsed, where it means the same thing: there is more here.
+             * The long press still works; this only adds a way in that can be
+             * seen.
+             */
+            float chevronCenter = getWidth() - menuZoneWidth() / 2f;
+            float chevronMiddle = getHeight() / 2f + dp(1);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(1));
+            canvas.drawLine(chevronCenter - dp(7), chevronMiddle + dp(3),
+                    chevronCenter, chevronMiddle - dp(3), paint);
+            canvas.drawLine(chevronCenter, chevronMiddle - dp(3),
+                    chevronCenter + dp(7), chevronMiddle + dp(3), paint);
+            paint.setStyle(Paint.Style.FILL);
+        }
+
+        /*
+         * The width of the tap target at the right edge that opens the menu.
+         * onDraw and onTouchEvent must agree, so neither computes it itself.
+         */
+        private float menuZoneWidth() {
+            return dp(44);
         }
 
         @Override
@@ -1525,7 +1827,13 @@ public final class DisplayControlService extends Service {
                 } else if (selected == 1) {
                     Log.i(TAG, "fixed navigation: home");
                     navigateHome();
-                } else if (held >= 650L) {
+                } else if (held >= 650L
+                        || event.getX() >= getWidth() - menuZoneWidth()) {
+                    /*
+                     * Either the long press that has always worked, or a plain
+                     * tap on the chevron at the right edge. The chevron exists
+                     * because the long press alone was not findable.
+                     */
                     Log.i(TAG, "fixed navigation: display menu");
                     toggleMenu();
                 } else {

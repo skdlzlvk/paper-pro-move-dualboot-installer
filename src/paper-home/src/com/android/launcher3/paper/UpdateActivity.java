@@ -29,6 +29,9 @@ public final class UpdateActivity extends Activity {
             "stable", "public-beta", "private-beta"
     };
 
+    /** What one press of the primary button means right now. */
+    private enum Mode { CHECK, DOWNLOAD, ARM, CANCEL_ARM, ACKNOWLEDGE, NONE }
+
     private TextView stateText;
     private TextView detailText;
     private Button primaryButton;
@@ -36,6 +39,7 @@ public final class UpdateActivity extends Activity {
     private volatile Thread worker;
     private OtaUpdateClient.Release availableRelease;
     private String channel;
+    private Mode primaryMode = Mode.CHECK;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -130,25 +134,66 @@ public final class UpdateActivity extends Activity {
 
     private void showInitialState() {
         OtaUpdateClient.Configuration configuration = configuration();
+        File root = OtaUpdateClient.stagingRoot(this);
+        File ready = new File(root, "current-ready");
+        File request = new File(root, "apply-request");
+        File result = new File(root, "apply-result");
+        // A finished apply consumed the staging and left only its report;
+        // show it once, whatever the configuration state, and let the owner
+        // dismiss it.
+        if (result.isFile() && !ready.isFile()) {
+            boolean applied = "ok".equals(applyResultField(result, "result"));
+            stateText.setText(applied ? R.string.update_applied_title
+                    : R.string.update_apply_failed_title);
+            detailText.setText(getString(applied
+                            ? R.string.update_applied_detail
+                            : R.string.update_apply_failed_detail,
+                    applyResultField(result, "detail")));
+            primaryMode = Mode.ACKNOWLEDGE;
+            primaryButton.setEnabled(true);
+            primaryButton.setText(R.string.update_acknowledge);
+            return;
+        }
         if (!configuration.isConfigured()) {
             stateText.setText(R.string.update_not_configured_title);
             detailText.setText(R.string.update_not_configured_detail);
+            primaryMode = Mode.NONE;
             primaryButton.setEnabled(false);
             primaryButton.setText(R.string.update_unavailable);
             return;
         }
-        File ready = new File(getFilesDir(), "ota-staging/current-ready");
         if (ready.isFile()) {
-            stateText.setText(R.string.update_ready_title);
-            detailText.setText(getString(R.string.update_ready_detail,
-                    readShort(ready)));
-            primaryButton.setEnabled(false);
-            primaryButton.setText(R.string.update_waiting_applier);
+            String staged = readShort(ready);
+            if (request.isFile()) {
+                stateText.setText(R.string.update_armed_title);
+                detailText.setText(getString(R.string.update_armed_detail,
+                        staged));
+                primaryMode = Mode.CANCEL_ARM;
+                primaryButton.setEnabled(true);
+                primaryButton.setText(R.string.update_apply_cancel);
+                return;
+            }
+            if (result.isFile()) {
+                // The last apply was refused; the staging is still intact,
+                // so the owner may ask again once the reason is fixed.
+                stateText.setText(R.string.update_apply_failed_title);
+                detailText.setText(getString(
+                        R.string.update_apply_failed_detail,
+                        applyResultField(result, "detail")));
+            } else {
+                stateText.setText(R.string.update_ready_title);
+                detailText.setText(getString(R.string.update_ready_detail,
+                        staged));
+            }
+            primaryMode = Mode.ARM;
+            primaryButton.setEnabled(true);
+            primaryButton.setText(R.string.update_apply_arm);
             return;
         }
         stateText.setText(R.string.update_current_title);
         detailText.setText(getString(R.string.update_current_detail,
                 configuration.currentReleaseId));
+        primaryMode = Mode.CHECK;
         primaryButton.setEnabled(true);
         primaryButton.setText(R.string.update_check);
     }
@@ -157,11 +202,46 @@ public final class UpdateActivity extends Activity {
         if (worker != null) {
             return;
         }
-        if (availableRelease == null) {
-            checkForUpdate();
-        } else {
-            downloadUpdate();
+        switch (primaryMode) {
+            case ACKNOWLEDGE:
+                File result = new File(OtaUpdateClient.stagingRoot(this),
+                        "apply-result");
+                if (result.isFile() && !result.delete()) {
+                    result.deleteOnExit();
+                }
+                availableRelease = null;
+                showInitialState();
+                return;
+            case ARM:
+                try {
+                    OtaUpdateClient.requestApply(this);
+                } catch (Exception failure) {
+                    showFailure(failure);
+                    return;
+                }
+                showInitialState();
+                return;
+            case CANCEL_ARM:
+                OtaUpdateClient.cancelApply(this);
+                showInitialState();
+                return;
+            case DOWNLOAD:
+                downloadUpdate();
+                return;
+            case CHECK:
+                checkForUpdate();
+                return;
+            default:
         }
+    }
+
+    private static String applyResultField(File result, String key) {
+        for (String line : readShort(result).split("\n")) {
+            if (line.startsWith(key + "=")) {
+                return line.substring(key.length() + 1).trim();
+            }
+        }
+        return "";
     }
 
     private void checkForUpdate() {
@@ -180,6 +260,7 @@ public final class UpdateActivity extends Activity {
                             release.toReleaseId,
                             formatBytes(release.totalBytes),
                             release.minimumBatteryPercent));
+                    primaryMode = Mode.DOWNLOAD;
                     primaryButton.setEnabled(true);
                     primaryButton.setText(R.string.update_download);
                     channelButton.setEnabled(true);
@@ -215,15 +296,16 @@ public final class UpdateActivity extends Activity {
                                     name, percent)));
                         });
                 runOnUiThread(() -> {
-                    stateText.setText(R.string.update_ready_title);
-                    detailText.setText(getString(
-                            R.string.update_staged_detail,
-                            release.toReleaseId, staged.getAbsolutePath()));
-                    primaryButton.setEnabled(false);
-                    primaryButton.setText(R.string.update_waiting_applier);
                     channelButton.setEnabled(true);
                     availableRelease = null;
                     worker = null;
+                    // The staged state carries on from here: the initial
+                    // state shows the release as ready and offers to apply
+                    // it on the next Android start.
+                    showInitialState();
+                    detailText.setText(getString(
+                            R.string.update_staged_detail,
+                            release.toReleaseId, staged.getAbsolutePath()));
                 });
             } catch (Exception failure) {
                 showFailure(failure);
@@ -237,6 +319,7 @@ public final class UpdateActivity extends Activity {
             stateText.setText(R.string.update_failed_title);
             detailText.setText(getString(R.string.update_failed_detail,
                     safeMessage(failure)));
+            primaryMode = Mode.CHECK;
             primaryButton.setEnabled(true);
             primaryButton.setText(R.string.update_retry);
             channelButton.setEnabled(true);

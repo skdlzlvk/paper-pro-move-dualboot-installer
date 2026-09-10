@@ -175,6 +175,19 @@ public final class NoteActivity extends Activity {
         super.onPause();
     }
 
+    @Override
+    protected void onDestroy() {
+        activityPaused = true;
+        if (noteView != null) {
+            // onPause already restored bridge ownership. Only remove work
+            // here: a replacement Activity may now own the control files.
+            noteView.cancelPaletteColorPreview();
+            noteView.removeColorSettleCallbacks();
+        }
+        // Do not cancel deferred saves or recycle their immutable snapshots.
+        super.onDestroy();
+    }
+
     private void writeNativePenControl(String name, String value) {
         try (FileOutputStream output =
                      new FileOutputStream(new File(getFilesDir(), name),
@@ -361,6 +374,10 @@ public final class NoteActivity extends Activity {
                 this::requestPreparedColorSettle;
         private final Runnable deferredColorPoll =
                 this::pollColorSettle;
+        private final Runnable deferredColorFrame =
+                this::renderPreparedColorFrame;
+        private final Runnable deferredPaletteColorFrame =
+                this::renderPreparedPaletteColorFrame;
         private final Runnable deferredPaletteColorPreview =
                 this::requestPaletteColorPreview;
 
@@ -385,6 +402,7 @@ public final class NoteActivity extends Activity {
         private boolean documentDirty;
         private boolean uiGestureCaptured;
         private boolean nativeUiCaptureActive;
+        // Document RGB work is independent of a disposable palette preview.
         private boolean colorSettlePending;
         private boolean colorSettlePreparing;
         private boolean colorSettleWindowOpen;
@@ -473,7 +491,6 @@ public final class NoteActivity extends Activity {
         }
 
         private void loadCurrentPage(int width, int height) {
-            Bitmap loaded = BitmapFactory.decodeFile(noteFile.getPath());
             if (page != null) {
                 page.recycle();
             }
@@ -494,22 +511,22 @@ public final class NoteActivity extends Activity {
                 for (NoteCommand command : commands) {
                     command.draw(pageCanvas);
                 }
-                if (loaded != null) {
-                    loaded.recycle();
-                    loaded = null;
-                }
-            } else if (loaded != null) {
-                pageCanvas.drawBitmap(loaded, 0f, 0f, null);
-                templateUpgraded = upgradeLegacyTemplatePixels(page);
-                loaded.recycle();
-                // Legacy notes remain a stable raster base. New strokes are
-                // still fast and undoable for this session; newly-created
-                // notes use the durable vector sidecar below.
-                basePage = page.copy(Bitmap.Config.RGB_565, false);
             } else {
-                drawTemplate(pageCanvas, noteTemplate, width, height);
-                basePage = page.copy(Bitmap.Config.RGB_565, false);
-                vectorDocument = true;
+                // A valid vector sidecar is authoritative. Decode the raster
+                // only for legacy notes or a missing/invalid sidecar.
+                Bitmap loaded = BitmapFactory.decodeFile(noteFile.getPath());
+                if (loaded != null) {
+                    pageCanvas.drawBitmap(loaded, 0f, 0f, null);
+                    templateUpgraded = upgradeLegacyTemplatePixels(page);
+                    loaded.recycle();
+                    // Legacy notes remain a stable raster base. New strokes
+                    // are still fast and undoable for this session.
+                    basePage = page.copy(Bitmap.Config.RGB_565, false);
+                } else {
+                    drawTemplate(pageCanvas, noteTemplate, width, height);
+                    basePage = page.copy(Bitmap.Config.RGB_565, false);
+                    vectorDocument = true;
+                }
             }
             noteMetadata.edit()
                     .putInt(noteId + ".template-render-version",
@@ -1889,14 +1906,17 @@ public final class NoteActivity extends Activity {
         private void schedulePaletteColorPreview() {
             paletteColorPreviewPending = true;
             saveHandler.removeCallbacks(deferredPaletteColorPreview);
-            saveHandler.postDelayed(deferredPaletteColorPreview,
-                    PALETTE_COLOR_PREVIEW_DELAY_MS);
+            if (!activityPaused) {
+                saveHandler.postDelayed(deferredPaletteColorPreview,
+                        PALETTE_COLOR_PREVIEW_DELAY_MS);
+            }
         }
 
         private void cancelPaletteColorPreview() {
             palettePreviewAfterRender = false;
             paletteColorPreviewPending = false;
             saveHandler.removeCallbacks(deferredPaletteColorPreview);
+            saveHandler.removeCallbacks(deferredPaletteColorFrame);
         }
 
         private void requestPaletteColorPreview() {
@@ -1909,8 +1929,10 @@ public final class NoteActivity extends Activity {
                 return;
             }
             paletteColorPreviewPending = false;
+            // A queued document prepare must wait for this palette pass; its
+            // pending bit is preserved and re-armed on completion/cancellation.
+            saveHandler.removeCallbacks(deferredColorPrepare);
             paletteColorPreviewActive = true;
-            colorSettlePending = true;
             colorSettlePreparing = true;
             /*
              * The palette is normally painted by the fast monochrome path,
@@ -1935,9 +1957,10 @@ public final class NoteActivity extends Activity {
              * These small panel-only frames close that race without flashing
              * or repainting the full note page.
              */
-            postDelayed(this::invalidatePalettePreviewRegion, 80L);
-            postDelayed(this::invalidatePalettePreviewRegion, 180L);
-            postDelayed(this::invalidatePalettePreviewRegion, 300L);
+            saveHandler.removeCallbacks(deferredPaletteColorFrame);
+            saveHandler.postDelayed(deferredPaletteColorFrame, 80L);
+            saveHandler.postDelayed(deferredPaletteColorFrame, 180L);
+            saveHandler.postDelayed(deferredPaletteColorFrame, 300L);
             saveHandler.removeCallbacks(deferredColorRequest);
             saveHandler.postDelayed(deferredColorRequest,
                     PALETTE_COLOR_STAGE_DELAY_MS);
@@ -1949,20 +1972,26 @@ public final class NoteActivity extends Activity {
                     (int) PEN_PANEL_RIGHT, (int) PEN_PANEL_BOTTOM);
         }
 
+        private void renderPreparedPaletteColorFrame() {
+            if (paletteColorPreviewActive && colorSettlePreparing
+                    && panelExpanded && !erasing && !drawing
+                    && !stylusInRange && !activityPaused) {
+                invalidatePalettePreviewRegion();
+            }
+        }
+
         private void stopPaletteColorPreviewForWriting() {
             cancelPaletteColorPreview();
             if (!paletteColorPreviewActive) {
                 return;
             }
-            saveHandler.removeCallbacks(deferredColorPrepare);
-            saveHandler.removeCallbacks(deferredColorRequest);
-            saveHandler.removeCallbacks(deferredColorPoll);
+            removeColorSettleCallbacks();
             writeNativePenControl(COLOR_MODE_FILE, "auto");
             writeNativePenControl(NOTE_ACTIVE_FILE, "active");
-            colorSettlePending = false;
             colorSettlePreparing = false;
             colorSettleWindowOpen = false;
             paletteColorPreviewActive = false;
+            scheduleColorSettleIfReady();
             Log.i(TAG, "palette preview stopped; native pen ready");
         }
 
@@ -1985,9 +2014,8 @@ public final class NoteActivity extends Activity {
                     }
                     /*
                      * Hover is not writing.  Keep a pending post-stroke color
-                     * settle alive so users do not have to move the Marker
-                     * completely away from the panel.  A real ACTION_DOWN
-                     * still cancels it before a new stroke starts.
+                     * request alive, but cancel its queued frames while the
+                     * Marker is in range. HOVER_EXIT re-arms the idle window.
                      */
                     cancelPendingAutoSave();
                     break;
@@ -2018,6 +2046,10 @@ public final class NoteActivity extends Activity {
             final float panelX = x - activePanelLeft();
             final int action = event.getActionMasked();
 
+            if (isStylusEvent(event) && action == MotionEvent.ACTION_DOWN) {
+                stylusInRange = true;
+                pauseColorSettleForPen();
+            }
             if (dismissPanelGesture) {
                 if (action == MotionEvent.ACTION_UP
                         || action == MotionEvent.ACTION_CANCEL) {
@@ -2122,7 +2154,6 @@ public final class NoteActivity extends Activity {
             switch (action) {
                 case MotionEvent.ACTION_DOWN:
                     disarmNativeUiCapture();
-                    pauseColorSettleForPen();
                     cancelPendingAutoSave();
                     requestUnbufferedDispatch(event);
                     beginNewStroke(event);
@@ -2384,7 +2415,8 @@ public final class NoteActivity extends Activity {
 
         private void prepareColorSettle() {
             if (!colorSettlePending || drawing || stylusInRange
-                    || activityPaused) {
+                    || activityPaused || colorSettlePreparing
+                    || colorSettleWindowOpen || paletteColorPreviewActive) {
                 return;
             }
             colorSettlePreparing = true;
@@ -2395,15 +2427,18 @@ public final class NoteActivity extends Activity {
              */
             requestNativeOverlayReset();
             invalidate();
-            postDelayed(this::invalidate, 80L);
-            postDelayed(this::invalidate, 220L);
+            saveHandler.removeCallbacks(deferredColorFrame);
+            saveHandler.postDelayed(deferredColorFrame, 80L);
+            saveHandler.postDelayed(deferredColorFrame, 220L);
             saveHandler.removeCallbacks(deferredColorRequest);
             saveHandler.postDelayed(
                     deferredColorRequest, COLOR_RESET_STAGE_DELAY_MS);
         }
 
         private void requestPreparedColorSettle() {
-            if (!colorSettlePending || drawing || stylusInRange
+            cancelColorFrameCallbacks();
+            if ((!colorSettlePending && !paletteColorPreviewActive)
+                    || drawing || stylusInRange
                     || activityPaused) {
                 colorSettlePreparing = false;
                 scheduleColorSettleIfReady();
@@ -2420,6 +2455,27 @@ public final class NoteActivity extends Activity {
             Log.i(TAG, "requested color settle after native overlay reset");
         }
 
+        private void renderPreparedColorFrame() {
+            if (colorSettlePending && colorSettlePreparing
+                    && !paletteColorPreviewActive && !drawing
+                    && !stylusInRange && !activityPaused) {
+                invalidate();
+            }
+        }
+
+        private void cancelColorFrameCallbacks() {
+            saveHandler.removeCallbacks(deferredColorFrame);
+            saveHandler.removeCallbacks(deferredPaletteColorFrame);
+        }
+
+        private void removeColorSettleCallbacks() {
+            saveHandler.removeCallbacks(deferredColorPrepare);
+            saveHandler.removeCallbacks(deferredColorRequest);
+            saveHandler.removeCallbacks(deferredColorPoll);
+            saveHandler.removeCallbacks(deferredPaletteColorPreview);
+            cancelColorFrameCallbacks();
+        }
+
         private void pollColorSettle() {
             if (!colorSettleWindowOpen) return;
             String mode = readNativePenControl(COLOR_MODE_FILE);
@@ -2427,7 +2483,11 @@ public final class NoteActivity extends Activity {
                     - colorSettleStartedAt >= COLOR_SETTLE_TIMEOUT_MS;
             if ("auto".equals(mode) || timedOut) {
                 colorSettleWindowOpen = false;
-                colorSettlePending = false;
+                // A panel-only preview must not consume an earlier document
+                // settle request. Re-arm it after this preview completes.
+                if (!paletteColorPreviewActive) {
+                    colorSettlePending = false;
+                }
                 paletteColorPreviewActive = false;
                 writeNativePenControl(COLOR_MODE_FILE, "auto");
                 if (!activityPaused) {
@@ -2436,15 +2496,14 @@ public final class NoteActivity extends Activity {
                 Log.i(TAG, timedOut
                         ? "color settle timed out; native pen restored"
                         : "color settle complete; native pen restored");
+                scheduleColorSettleIfReady();
                 return;
             }
             saveHandler.postDelayed(deferredColorPoll, COLOR_SETTLE_POLL_MS);
         }
 
         private void pauseColorSettleForPen() {
-            saveHandler.removeCallbacks(deferredColorPrepare);
-            saveHandler.removeCallbacks(deferredColorRequest);
-            saveHandler.removeCallbacks(deferredColorPoll);
+            removeColorSettleCallbacks();
             if (colorSettlePreparing || colorSettleWindowOpen) {
                 writeNativePenControl(COLOR_MODE_FILE, "auto");
                 if (!activityPaused) {
@@ -2455,22 +2514,21 @@ public final class NoteActivity extends Activity {
             colorSettleWindowOpen = false;
             if (paletteColorPreviewActive) {
                 paletteColorPreviewActive = false;
-                colorSettlePending = false;
             }
         }
 
         private void restoreColorSettleState() {
             cancelColorSettleCallbacks(true);
+            scheduleColorSettleIfReady();
         }
 
         private void cancelColorSettleCallbacks(boolean restoreNativePen) {
             cancelPaletteColorPreview();
-            saveHandler.removeCallbacks(deferredColorPrepare);
-            saveHandler.removeCallbacks(deferredColorRequest);
-            saveHandler.removeCallbacks(deferredColorPoll);
+            removeColorSettleCallbacks();
             writeNativePenControl(COLOR_MODE_FILE, "auto");
             colorSettlePreparing = false;
             colorSettleWindowOpen = false;
+            paletteColorPreviewActive = false;
             if (restoreNativePen && !activityPaused) {
                 writeNativePenControl(NOTE_ACTIVE_FILE, "active");
             }
@@ -3186,9 +3244,22 @@ public final class NoteActivity extends Activity {
                 return;
             }
             final long snapshotGeneration = documentGeneration;
+            final boolean traceSnapshot = Log.isLoggable(TAG, Log.DEBUG);
+            final long snapshotStart = traceSnapshot ? System.nanoTime() : 0L;
             Bitmap snapshot =
                     page.copy(Bitmap.Config.RGB_565, false);
+            final long bitmapCopiedAt = traceSnapshot ? System.nanoTime() : 0L;
             byte[] vectorSnapshot = serializeVectorCommands();
+            if (traceSnapshot) {
+                // Opt-in timing only; never log note names, paths or content.
+                Log.d(TAG, "save snapshot copy_us="
+                        + (bitmapCopiedAt - snapshotStart) / 1000L
+                        + " vector_us="
+                        + (System.nanoTime() - bitmapCopiedAt) / 1000L
+                        + " bitmap_bytes=" + snapshot.getAllocationByteCount()
+                        + " vector_bytes="
+                        + (vectorSnapshot == null ? 0 : vectorSnapshot.length));
+            }
             SaveRequest request = new SaveRequest(
                     snapshot, vectorSnapshot, snapshotGeneration,
                     currentPageIndex, noteFile, noteVectorFile);

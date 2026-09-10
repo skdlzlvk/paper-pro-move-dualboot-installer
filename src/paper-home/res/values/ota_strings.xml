@@ -23,6 +23,15 @@
     <string name="update_ready_detail">Release %1$s is staged.</string>
     <string name="update_staged_detail">Release %1$s passed signature, size, and SHA-256 checks. Staged at %2$s</string>
     <string name="update_waiting_applier">Offline installer required</string>
+    <string name="update_apply_arm">Apply on next Android start</string>
+    <string name="update_armed_title">Update scheduled</string>
+    <string name="update_armed_detail">Release %1$s will be verified and applied the next time Android starts from the stock system. Open Stock OS from the home menu, then start Android again.</string>
+    <string name="update_apply_cancel">Cancel scheduled update</string>
+    <string name="update_applied_title">Update applied</string>
+    <string name="update_applied_detail">%1$s</string>
+    <string name="update_apply_failed_title">The update was refused</string>
+    <string name="update_apply_failed_detail">Nothing was changed. %1$s</string>
+    <string name="update_acknowledge">OK</string>
     <string name="update_battery_title">Charge before downloading</string>
     <string name="update_battery_detail">Battery is %1$d%%; this release requires %2$d%%.</string>
     <string name="update_failed_title">Update refused</string>
